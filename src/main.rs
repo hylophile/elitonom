@@ -139,6 +139,7 @@ enum TileType {
     THat,
     PHat,
     FHat,
+    Pseudo,
 }
 
 enum Rule {
@@ -179,7 +180,7 @@ static RULES: &[Rule] = &[
     Rule::Four(4, 0, TileType::F, 3),
 ];
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct MetaTile {
     transform: Affine2,
     shape: TileType,
@@ -207,33 +208,85 @@ fn shape_to_outline(shape: TileType) -> &'static [Vec2] {
         TileType::THat => todo!(),
         TileType::PHat => todo!(),
         TileType::FHat => todo!(),
+        TileType::Pseudo => todo!(),
     }
 }
 
-fn construct_patch(h: MetaTile, t: MetaTile, f: MetaTile, p: MetaTile) {
-    let mut root = Tree::new(MetaTile::new(Affine2::IDENTITY, TileType::H, 2));
+fn shape_to_id(shape: TileType) -> usize {
+    match shape {
+        TileType::H => 0,
+        TileType::T => 1,
+        TileType::P => 2,
+        TileType::F => 3,
+        _ => panic!(),
+    }
+}
+
+fn construct_patch(h: Tree<MetaTile>, t: Tree<MetaTile>, p: Tree<MetaTile>, f: Tree<MetaTile>) {
+    let mut root = Tree::new(MetaTile::new(Affine2::IDENTITY, TileType::Pseudo, 2));
+    let shapes = [h, t, p, f];
 
     for rule in RULES {
         match rule {
             Rule::H => {
-                root.push_back(Tree::new(MetaTile::new(Affine2::IDENTITY, TileType::H, 2)));
+                root.push_back(shapes[0].clone()); //todo: set transform to id?
             }
-            Rule::Four(n_child, n_outline, shape, _) => {
+            Rule::Four(n_child, n_outline, shape, n_vertex) => {
                 let child = root.iter().nth(*n_child).unwrap().data();
                 let poly = shape_to_outline(child.shape);
                 let t = child.transform;
 
-                let point_p = t.transform_point2(poly[(n_outline + 1) % poly.len()]);
-                let point_q = t.transform_point2(poly[*n_outline]);
+                let p2 = t.transform_point2(poly[(n_outline + 1) % poly.len()]);
+                let q2 = t.transform_point2(poly[*n_outline]);
 
-                let new_shape = shape; //todo
-                let new_poly = h; //todo
-                let new_transform = todo!();
-                let a = 1;
+                let mut new_shape = shapes[shape_to_id(*shape)].clone(); //todo
 
-                // root.push_back(Tree::new(MetaTile));
+                let new_shape_outline = shape_to_outline(new_shape.data().shape);
+
+                let p1 = new_shape_outline[*n_vertex];
+                let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
+                // let new_poly = h; //todo
+                let new_transform = match_two(p1, q1, p2, q2);
+                // *(new_shape).data_mut().transform = new_transform.into();
+                let e = new_shape.data().width;
+                let c = new_shape.abandon();
+                let mut d = Tree::new(MetaTile {
+                    transform: new_transform,
+                    shape: *shape,
+                    width: e,
+                });
+                d.append(c);
+
+                root.push_back(d);
             }
-            Rule::Six(_, _, _, _, _, _) => todo!(),
+            Rule::Six(n_child_p, n_outline_p, n_child_q, n_outline_q, shape, n_vertex) => {
+                let child_p = root.iter().nth(*n_child_p).unwrap().data();
+                let child_q = root.iter().nth(*n_child_q).unwrap().data();
+
+                let p2 = child_p
+                    .transform
+                    .transform_point2(shape_to_outline(child_q.shape)[*n_outline_q]);
+                let q2 = child_q
+                    .transform
+                    .transform_point2(shape_to_outline(child_p.shape)[*n_outline_p]);
+
+                let mut new_shape = shapes[shape_to_id(*shape)].clone(); //todo
+                let new_shape_outline = shape_to_outline(new_shape.data().shape);
+                let p1 = new_shape_outline[*n_vertex];
+                let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
+                let new_transform = match_two(p1, q1, p2, q2);
+                // *(new_shape).data_mut().transform = new_transform.into();
+                let e = new_shape.data().width;
+                let c = new_shape.abandon();
+                let mut d = Tree::new(MetaTile {
+                    transform: new_transform,
+                    shape: *shape,
+                    width: e,
+                });
+                d.append(c);
+
+                root.push_back(d);
+            }
         }
     }
 }
