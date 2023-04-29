@@ -12,8 +12,8 @@ use bevy_prototype_lyon::prelude::*;
 use std::ops::Mul;
 use trees::Tree;
 // const SCALE: f32 = 10.0;
-const SQ3: f32 = 1.7320508075688772;
-const HR3: f32 = 0.8660254037844386;
+const SQ3: f32 = 1.732_050_8;
+const HR3: f32 = 0.866_025_4;
 
 fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
     Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
@@ -104,7 +104,7 @@ fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
         //     TileType::FHat => todo!(),
         // }
         // let mirror = child.data().shape == TileType::H1Hat;
-        commands.spawn((hat2(child.data().transform, child.data().shape)));
+        commands.spawn(hat2(child.data().transform, child.data().shape));
     }
 }
 
@@ -240,8 +240,8 @@ fn construct_patch(h: MetaTile, t: MetaTile, f: MetaTile, p: MetaTile) {
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    _meshes: ResMut<Assets<Mesh>>,
+    _materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let hh = h_init();
     draw_tree(&mut commands, hh);
