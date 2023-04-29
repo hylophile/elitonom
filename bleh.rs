@@ -1,3 +1,19 @@
+type TranslateX = f32;
+type TranslateY = f32;
+type RotateByDegrees = f32;
+type Mirror = bool;
+type HatArgs = (TranslateX, TranslateY, RotateByDegrees, Mirror);
+
+const H_TILE: &[HatArgs] = &[
+    (0.0, 0.0, 120.0, true),
+    (0.0, 2.0 * SQ3, 300.0, false),
+    (-3.0, 1.0 * SQ3, 60.0, false),
+    (3.0, 1.0 * SQ3, 60.0, false),
+];
+static T_TILE: &[HatArgs] = &[(0.0, 0.0, 180.0, false)];
+static P_TILE: &[HatArgs] = &[(0.0, 0.0, 180.0, false), (-3.0, 1.0 * SQ3, 120.0, false)];
+static F_TILE: &[HatArgs] = &[(0.0, 0.0, 180.0, false), (-3.0, 1.0 * SQ3, 120.0, false)];
+
 fn hat(
     tile_type: TileType,
     translate_x: f32,
@@ -109,3 +125,22 @@ fn spawn_supertile(
         })
         .id()
 }
+// spawn_supertile(&mut commands, TileType::H, -4.0, 0.0, 0.0);
+// spawn_supertile(&mut commands, TileType::T, -2.0, 0.0, 0.0);
+// spawn_supertile(&mut commands, TileType::P, 0.0, 0.0, 0.0);
+// spawn_supertile(&mut commands, TileType::F, 2.0, 0.0, 0.0);
+
+// for i in 0..10 {
+//     for j in 0..10 {
+//         let i = i as f32;
+//         let j = j as f32;
+
+//         spawn_supertile(
+//             &mut commands,
+//             Supertile::HTile,
+//             j * 1.0,
+//             i * 1.0,
+//             (i + j) * 5.0,
+//         );
+//     }
+// }

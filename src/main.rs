@@ -2,24 +2,18 @@
 #![feature(fn_traits)]
 
 use bevy::{
-    math::{Affine2, Affine3A},
+    math::Affine2,
     prelude::*,
-    sprite::MaterialMesh2dBundle,
+    // sprite::MaterialMesh2dBundle,
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use std::ops::{Add, Mul};
-use trees::{Forest, Tree};
-const SCALE: f32 = 10.0;
+use std::ops::Mul;
+use trees::Tree;
+// const SCALE: f32 = 10.0;
 const SQ3: f32 = 1.7320508075688772;
 const HR3: f32 = 0.8660254037844386;
-
-type TranslateX = f32;
-type TranslateY = f32;
-type RotateByDegrees = f32;
-type Mirror = bool;
-type HatArgs = (TranslateX, TranslateY, RotateByDegrees, Mirror);
 
 fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
     Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
@@ -44,16 +38,6 @@ const HAT_OUTLINE: &[Vec2] = &[
     Vec2::new(1.0, SQ3),
     Vec2::new(0.0, SQ3),
 ];
-
-const H_TILE: &[HatArgs] = &[
-    (0.0, 0.0, 120.0, true),
-    (0.0, 2.0 * SQ3, 300.0, false),
-    (-3.0, 1.0 * SQ3, 60.0, false),
-    (3.0, 1.0 * SQ3, 60.0, false),
-];
-static T_TILE: &[HatArgs] = &[(0.0, 0.0, 180.0, false)];
-static P_TILE: &[HatArgs] = &[(0.0, 0.0, 180.0, false), (-3.0, 1.0 * SQ3, 120.0, false)];
-static F_TILE: &[HatArgs] = &[(0.0, 0.0, 180.0, false), (-3.0, 1.0 * SQ3, 120.0, false)];
 
 const H_COLOR: Color = Color::WHITE;
 const H_MIRROR_COLOR: Color = Color::SEA_GREEN;
@@ -102,22 +86,6 @@ fn h_init() -> Tree<MetaTile> {
         shape: TileType::H1Hat,
         width: 1,
     }));
-    // h.push_back(Tree::new(MetaTile {
-    //     transform: Affine2::from_translation(Vec2::new(2.5, HR3)).mul(
-    //         Affine2::from_cols_array_2d(&[[-0.5, HR3], [-HR3, -0.5], [0.0, 0.0]]).mul(
-    //             Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, -0.5], [0.0, 0.0]]),
-    //         ),
-    //     ),
-    //     shape: TileType::H1Hat,
-    //     width: 1,
-    // }));
-    // h.push_back(Tree::new(MetaTile {
-    //     transform: Affine2::from_cols_array_2d(&[[0.0, -0.5], [0.5, -1.0], [10.5, 5.0]]),
-    //     shape: TileType::H1Hat,
-    //     width: 1,
-    // }));
-
-    // dbg!(&h);
 
     h
 }
@@ -136,7 +104,7 @@ fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
         //     TileType::FHat => todo!(),
         // }
         // let mirror = child.data().shape == TileType::H1Hat;
-        commands.spawn((hat2(child.data().transform)));
+        commands.spawn((hat2(child.data().transform, child.data().shape)));
     }
 }
 
@@ -228,16 +196,6 @@ impl MetaTile {
     }
 }
 
-// struct MetaTileRoot {
-//     width: u8,
-// }
-
-// impl MetaTileRoot {
-//     pub fn new(width: u8) -> Self {
-//         Self { width }
-//     }
-// }
-
 fn shape_to_outline(shape: TileType) -> &'static [Vec2] {
     match shape {
         TileType::H => H_OUTLINE,
@@ -296,32 +254,21 @@ fn setup(
             ..default()
         })
         .insert(bevy_pancam::PanCam::default());
-
-    // spawn_supertile(&mut commands, TileType::H, -4.0, 0.0, 0.0);
-    // spawn_supertile(&mut commands, TileType::T, -2.0, 0.0, 0.0);
-    // spawn_supertile(&mut commands, TileType::P, 0.0, 0.0, 0.0);
-    // spawn_supertile(&mut commands, TileType::F, 2.0, 0.0, 0.0);
-
-    // for i in 0..10 {
-    //     for j in 0..10 {
-    //         let i = i as f32;
-    //         let j = j as f32;
-
-    //         spawn_supertile(
-    //             &mut commands,
-    //             Supertile::HTile,
-    //             j * 1.0,
-    //             i * 1.0,
-    //             (i + j) * 5.0,
-    //         );
-    //     }
-    // }
 }
 
-fn hat2(transform: Affine2) -> (ShapeBundle, Fill, Stroke) {
+fn hat2(transform: Affine2, shape: TileType) -> (ShapeBundle, Fill, Stroke) {
     let hat_polygon = shapes::Polygon {
         points: Vec::from(HAT_OUTLINE),
         closed: true,
+    };
+
+    let color = match shape {
+        TileType::H1Hat => H_MIRROR_COLOR,
+        TileType::HHat => H_COLOR,
+        TileType::THat => T_COLOR,
+        TileType::PHat => P_COLOR,
+        TileType::FHat => F_COLOR,
+        _ => panic!(),
     };
 
     (
@@ -330,10 +277,8 @@ fn hat2(transform: Affine2) -> (ShapeBundle, Fill, Stroke) {
             transform: Transform::from_matrix(mat4_from_affine2(transform)),
             ..default()
         },
-        Fill::color(Color::WHITE),
-        // Stroke::new(Color::BLACK, SCALE / 3.0),
-        Stroke::new(Color::BLACK, 0.2),
-        // Transform::new(),
+        Fill::color(color),
+        Stroke::new(STROKE_COLOR, 0.2),
     )
 }
 
