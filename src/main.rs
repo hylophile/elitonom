@@ -9,7 +9,7 @@ use bevy::{
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use std::ops::Mul;
+use std::{f32::consts::PI, ops::Mul};
 use trees::Tree;
 // const SCALE: f32 = 10.0;
 const SQ3: f32 = 1.732_050_8;
@@ -61,21 +61,25 @@ fn h_init() -> Tree<MetaTile> {
         transform: Affine2::IDENTITY,
         shape: TileType::H,
         width: 2,
+        outline: H_OUTLINE.to_vec(),
     });
     h.push_back(Tree::new(MetaTile {
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[5], H_OUTLINE[0]),
         shape: TileType::HHat,
         width: 1,
+        outline: HAT_OUTLINE.to_vec(),
     }));
     h.push_back(Tree::new(MetaTile {
         transform: match_two(HAT_OUTLINE[9], HAT_OUTLINE[11], H_OUTLINE[1], H_OUTLINE[2]),
         shape: TileType::HHat,
         width: 1,
+        outline: HAT_OUTLINE.to_vec(),
     }));
     h.push_back(Tree::new(MetaTile {
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[3], H_OUTLINE[4]),
         shape: TileType::HHat,
         width: 1,
+        outline: HAT_OUTLINE.to_vec(),
     }));
     h.push_back(Tree::new(MetaTile {
         transform: Affine2::from_cols_array_2d(&[
@@ -85,13 +89,105 @@ fn h_init() -> Tree<MetaTile> {
         ]),
         shape: TileType::H1Hat,
         width: 1,
+        outline: HAT_OUTLINE.to_vec(),
     }));
 
     h
 }
 
+const T_OUTLINE: &[Vec2] = &[
+    Vec2::new(0.0, 0.0),
+    Vec2::new(3.0, 0.0),
+    Vec2::new(1.5, 3.0 * HR3),
+];
+
+fn t_init() -> Tree<MetaTile> {
+    let mut t = Tree::new(MetaTile {
+        transform: Affine2::IDENTITY,
+        shape: TileType::T,
+        width: 2,
+        outline: T_OUTLINE.to_vec(),
+    });
+    t.push_back(Tree::new(MetaTile {
+        transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [0.5, HR3]]),
+        shape: TileType::THat,
+        width: 1,
+        outline: HAT_OUTLINE.to_vec(),
+    }));
+
+    t
+}
+
+const P_OUTLINE: &[Vec2] = &[
+    Vec2::new(0.0, 0.0),
+    Vec2::new(4.0, 0.0),
+    Vec2::new(3.0, 2.0 * HR3),
+    Vec2::new(-1.0, 2.0 * HR3),
+];
+
+fn p_init() -> Tree<MetaTile> {
+    let mut p = Tree::new(MetaTile {
+        transform: Affine2::IDENTITY,
+        shape: TileType::P,
+        width: 2,
+        outline: P_OUTLINE.to_vec(),
+    });
+    p.push_back(Tree::new(MetaTile {
+        transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [1.5, HR3]]),
+        shape: TileType::PHat,
+        width: 1,
+        outline: HAT_OUTLINE.to_vec(),
+    }));
+    p.push_back(Tree::new(MetaTile {
+        transform: Affine2::from_cols_array_2d(&[
+            [0.25, -0.5 * HR3],
+            [0.5 * HR3, 0.25],
+            [0.0, SQ3],
+        ]),
+        shape: TileType::PHat,
+        width: 1,
+        outline: HAT_OUTLINE.to_vec(),
+    }));
+
+    p
+}
+
+const F_OUTLINE: &[Vec2] = &[
+    Vec2::new(0.0, 0.0),
+    Vec2::new(3.0, 0.0),
+    Vec2::new(3.5, HR3),
+    Vec2::new(3.0, 2.0 * HR3),
+    Vec2::new(-1.0, 2.0 * HR3),
+];
+
+fn f_init() -> Tree<MetaTile> {
+    let mut f = Tree::new(MetaTile {
+        transform: Affine2::IDENTITY,
+        shape: TileType::F,
+        width: 2,
+        outline: F_OUTLINE.to_vec(),
+    });
+    f.push_back(Tree::new(MetaTile {
+        transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [1.5, HR3]]),
+        shape: TileType::FHat,
+        width: 1,
+        outline: HAT_OUTLINE.to_vec(),
+    }));
+    f.push_back(Tree::new(MetaTile {
+        transform: Affine2::from_cols_array_2d(&[
+            [0.25, -0.5 * HR3],
+            [0.5 * HR3, 0.25],
+            [0.0, SQ3],
+        ]),
+        shape: TileType::FHat,
+        width: 1,
+        outline: HAT_OUTLINE.to_vec(),
+    }));
+
+    f
+}
 fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
-    for child in tree.iter() {
+    for (i, child) in tree.into_bfs().iter.enumerate() {
         // match child.data().shape {
         //     TileType::H => todo!(),
         //     TileType::T => todo!(),
@@ -104,7 +200,29 @@ fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
         //     TileType::FHat => todo!(),
         // }
         // let mirror = child.data().shape == TileType::H1Hat;
-        commands.spawn(hat2(child.data().transform, child.data().shape));
+        let z = (i as f32) * 0.00001;
+
+        let is_hat: bool = match child.data.shape {
+            TileType::H => false,
+            TileType::T => false,
+            TileType::P => false,
+            TileType::F => false,
+            TileType::H1Hat => true,
+            TileType::HHat => true,
+            TileType::THat => true,
+            TileType::PHat => true,
+            TileType::FHat => true,
+            TileType::Pseudo => false,
+        };
+
+        if is_hat {
+            continue;
+        }
+        dbg!(&child.data);
+        commands.spawn(hat2(child.data, z));
+        // if i == 0 {
+        //     break;
+        // }
     }
 }
 
@@ -184,25 +302,27 @@ static RULES: &[Rule] = &[
 struct MetaTile {
     transform: Affine2,
     shape: TileType,
+    outline: Vec<Vec2>,
     width: u8,
 }
 
 impl MetaTile {
-    pub fn new(transform: Affine2, shape: TileType, width: u8) -> Self {
+    pub fn new(transform: Affine2, shape: TileType, width: u8, outline: Vec<Vec2>) -> Self {
         Self {
             transform,
             shape,
             width,
+            outline,
         }
     }
 }
 
-fn shape_to_outline(shape: TileType) -> &'static [Vec2] {
+fn shape_to_outline(shape: TileType) -> Vec<Vec2> {
     match shape {
-        TileType::H => H_OUTLINE,
-        TileType::T => todo!(),
-        TileType::P => todo!(),
-        TileType::F => todo!(),
+        TileType::H => H_OUTLINE.to_vec(),
+        TileType::T => T_OUTLINE.to_vec(),
+        TileType::P => P_OUTLINE.to_vec(),
+        TileType::F => F_OUTLINE.to_vec(),
         TileType::H1Hat => todo!(),
         TileType::HHat => todo!(),
         TileType::THat => todo!(),
@@ -222,8 +342,18 @@ fn shape_to_id(shape: TileType) -> usize {
     }
 }
 
-fn construct_patch(h: Tree<MetaTile>, t: Tree<MetaTile>, p: Tree<MetaTile>, f: Tree<MetaTile>) {
-    let mut root = Tree::new(MetaTile::new(Affine2::IDENTITY, TileType::Pseudo, 2));
+fn construct_patch(
+    h: Tree<MetaTile>,
+    t: Tree<MetaTile>,
+    p: Tree<MetaTile>,
+    f: Tree<MetaTile>,
+) -> Tree<MetaTile> {
+    let mut root = Tree::new(MetaTile::new(
+        Affine2::IDENTITY,
+        TileType::Pseudo,
+        2,
+        H_OUTLINE.to_vec(),
+    ));
     let shapes = [h, t, p, f];
 
     for rule in RULES {
@@ -254,6 +384,7 @@ fn construct_patch(h: Tree<MetaTile>, t: Tree<MetaTile>, p: Tree<MetaTile>, f: T
                     transform: new_transform,
                     shape: *shape,
                     width: e,
+                    outline: new_shape_outline,
                 });
                 d.append(c);
 
@@ -282,12 +413,102 @@ fn construct_patch(h: Tree<MetaTile>, t: Tree<MetaTile>, p: Tree<MetaTile>, f: T
                     transform: new_transform,
                     shape: *shape,
                     width: e,
+                    outline: new_shape_outline,
                 });
                 d.append(c);
 
                 root.push_back(d);
             }
         }
+    }
+    root
+}
+
+struct AllFour {
+    h: Tree<MetaTile>,
+    p: Tree<MetaTile>,
+    f: Tree<MetaTile>,
+    t: Tree<MetaTile>,
+}
+
+fn rot_about(p: Vec2, angle: f32) -> Affine2 {
+    Affine2::from_translation(p).mul(Affine2::from_angle(angle).mul(Affine2::from_translation(-p)))
+}
+
+fn intersect(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2) -> Vec2 {
+    let d = (q2.y - p2.y) * (q1.x - p1.x) - (q2.x - p2.x) * (q1.y - p1.y);
+    let u_a = ((q2.x - p2.x) * (p1.y - p2.y) - (q2.y - p2.y) * (p1.x - p2.x)) / d;
+    // const uB =
+    //   ((q1.x - p1.x) * (p1.y - p2.y) - (q1.y - p1.y) * (p1.x - p2.x)) / d;
+
+    return Vec2 {
+        x: p1.x + u_a * (q1.x - p1.x),
+        y: p1.y + u_a * (q1.y - p1.y),
+    };
+}
+
+// #[test]
+// fn test_rot() {
+//     let p = Vec2::new(1.0, 0.0);
+//     let res = rot_about(p, PI);
+//     println!("{res}");
+//     assert_f32_near!(res, [[-1.0, 0.0], [0.0, -1.0], [2.0, 0.0]]);
+// }
+
+fn eval_meta_tile(mt: &MetaTile, i: usize) -> Vec2 {
+    let p = mt.outline[i];
+    mt.transform.transform_point2(p)
+}
+
+fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
+    //-> AllFour {
+    let children: Vec<&trees::Node<MetaTile>> = patch.iter().collect();
+    let bps1 = eval_meta_tile(children[8].data(), 2);
+    let bps2 = eval_meta_tile(children[21].data(), 2);
+    let rbps = rot_about(bps1, (-2.0 * PI) / 2.0).transform_point2(bps2);
+
+    let p72 = eval_meta_tile(children[7].data(), 2);
+    let p252 = eval_meta_tile(children[25].data(), 2);
+
+    let llc = intersect(bps1, rbps, eval_meta_tile(children[6].data(), 2), p72);
+    let w = eval_meta_tile(children[6].data(), 2) - llc;
+
+    let mut new_h_outline = vec![llc, bps1];
+
+    let w = Affine2::from_angle(-PI / 3.0).transform_point2(w);
+
+    new_h_outline.push(new_h_outline[1] + w);
+    new_h_outline.push(eval_meta_tile(children[14].data(), 2));
+
+    let w = Affine2::from_angle(-PI / 3.0).transform_point2(w);
+
+    new_h_outline.push(new_h_outline[3] - w);
+    new_h_outline.push(eval_meta_tile(children[6].data(), 2));
+
+    let mut new_h = Tree::new(MetaTile {
+        transform: Affine2::IDENTITY,
+        width: patch.data().width,
+        shape: TileType::H, // todo use actual outline
+        outline: new_h_outline,
+    });
+
+    // let t = patch.data().transform;
+    // let c = patch.abandon();
+    let a: Vec<Tree<MetaTile>> = patch
+        .clone()
+        .iter_mut()
+        .map(|mut sub| sub.detach())
+        .collect();
+
+    for n_child in [0, 9, 16, 27, 26, 6, 1, 8, 10, 15] {
+        new_h.push_back(a[n_child].clone())
+    }
+
+    AllFour {
+        h: new_h.clone(),
+        p: new_h.clone(),
+        f: new_h.clone(),
+        t: new_h.clone(),
     }
 }
 
@@ -296,8 +517,6 @@ fn setup(
     _meshes: ResMut<Assets<Mesh>>,
     _materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let hh = h_init();
-    draw_tree(&mut commands, hh);
     commands
         .spawn(Camera2dBundle {
             projection: OrthographicProjection {
@@ -307,39 +526,52 @@ fn setup(
             ..default()
         })
         .insert(bevy_pancam::PanCam::default());
+
+    let h = h_init();
+    let t = t_init();
+    let p = p_init();
+    let f = f_init();
+    let patch = construct_patch(h.clone(), t.clone(), p.clone(), f.clone());
+    let a = construct_meta_tiles(patch);
+    // dbg!(patch);
+    draw_tree(&mut commands, a.h);
+    // draw_tree(&mut commands, f);
+    // draw_tree(&mut commands, pp);
+    // draw_tree(&mut commands, ff);
 }
 
-fn hat2(transform: Affine2, shape: TileType) -> (ShapeBundle, Fill, Stroke) {
+fn hat2(tile: MetaTile, z: f32) -> (ShapeBundle, Fill, Stroke) {
     let hat_polygon = shapes::Polygon {
-        points: Vec::from(HAT_OUTLINE),
+        // points: Vec::from(HAT_OUTLINE),
+        points: Vec::from(tile.outline),
         closed: true,
     };
 
-    let color = match shape {
+    let color = match tile.shape {
         TileType::H1Hat => H_MIRROR_COLOR,
         TileType::HHat => H_COLOR,
         TileType::THat => T_COLOR,
         TileType::PHat => P_COLOR,
         TileType::FHat => F_COLOR,
-        _ => panic!(),
+        _ => Color::rgba(0.0, 0.0, 0.0, 0.1),
     };
 
     (
         ShapeBundle {
             path: GeometryBuilder::build_as(&hat_polygon),
-            transform: Transform::from_matrix(mat4_from_affine2(transform)),
+            transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
             ..default()
         },
         Fill::color(color),
-        Stroke::new(STROKE_COLOR, 0.2),
+        Stroke::new(Color::rgba(0.0, 0.0, 0.0, 0.5), 0.2),
     )
 }
 
-fn mat4_from_affine2(affine2: Affine2) -> Mat4 {
+fn mat4_from_affine2(affine2: Affine2, z: f32) -> Mat4 {
     Mat4::from_cols(
         Vec4::new(affine2.matrix2.x_axis.x, affine2.matrix2.x_axis.y, 0.0, 0.0),
         Vec4::new(affine2.matrix2.y_axis.x, affine2.matrix2.y_axis.y, 0.0, 0.0),
         Vec4::Z,
-        Vec4::new(affine2.translation.x, affine2.translation.y, 0.0, 1.0),
+        Vec4::new(affine2.translation.x, affine2.translation.y, z, 1.0),
     )
 }
