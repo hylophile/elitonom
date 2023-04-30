@@ -9,7 +9,7 @@ use bevy::{
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use std::{f32::consts::PI, ops::Mul};
+use std::{f32::consts::PI, fmt::Display, ops::Mul};
 use trees::Tree;
 // const SCALE: f32 = 10.0;
 const SQ3: f32 = 1.732_050_8;
@@ -17,6 +17,15 @@ const HR3: f32 = 0.866_025_4;
 
 fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
     Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
+}
+
+#[test]
+fn ms2() {
+    let p = Vec2 { x: 1.73, y: -0.21 };
+    let q = Vec2 { x: 1.73, y: 0.21 };
+    let res = match_segment(p, q);
+    println!("{}", res);
+    assert_eq!(1, 0);
 }
 
 fn match_two(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2) -> Affine2 {
@@ -186,8 +195,14 @@ fn f_init() -> Tree<MetaTile> {
 
     f
 }
+
+fn build_out(tree: Tree<MetaTile>) {}
+
+fn build_out_h(tree: Tree<MetaTile>) {}
+
 fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
-    for (i, child) in tree.into_bfs().iter.enumerate() {
+    let mut z = 0.0;
+    for (i, child) in tree.iter().enumerate() {
         // match child.data().shape {
         //     TileType::H => todo!(),
         //     TileType::T => todo!(),
@@ -200,9 +215,8 @@ fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
         //     TileType::FHat => todo!(),
         // }
         // let mirror = child.data().shape == TileType::H1Hat;
-        let z = (i as f32) * 0.00001;
 
-        let is_hat: bool = match child.data.shape {
+        let is_hat: bool = match child.data().shape {
             TileType::H => false,
             TileType::T => false,
             TileType::P => false,
@@ -212,18 +226,39 @@ fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
             TileType::THat => true,
             TileType::PHat => true,
             TileType::FHat => true,
-            TileType::Pseudo => false,
+            TileType::Pseudo => true,
         };
 
-        if is_hat {
-            continue;
+        // if is_hat {
+        //     continue;
+        // }
+        // println!("{}", &child.data());
+        // let x = trees::Forest::new();
+        // x.append(child);
+        // let a: trees::Forest<MetaTile> = child
+        //     .clone()
+        //     .iter_mut()
+        //     .map(|mut sub| sub.detach())
+        //     .collect();
+
+        // let c: Tree<MetaTile> = *child.detach();
+        // draw_tree(commands, c);
+        // continue;
+        let t = child.data().transform;
+        for hat in child.iter() {
+            let mut ht = hat.data().clone();
+            ht.transform = t.mul(ht.transform);
+            z += 0.0001;
+            commands.spawn(hat2(ht.clone(), z));
+            // *hat.data_mut().transform = *t.mul(ht);
         }
-        dbg!(&child.data);
-        commands.spawn(hat2(child.data, z));
+        z += 0.0001;
+        commands.spawn(hat2(child.data().clone(), z));
         // if i == 0 {
         //     break;
         // }
     }
+    commands.spawn(hat2(tree.data().clone(), z));
 }
 
 fn main() {
@@ -260,6 +295,7 @@ enum TileType {
     Pseudo,
 }
 
+#[derive(Debug)]
 enum Rule {
     H,
     Four(usize, usize, TileType, usize),
@@ -305,7 +341,20 @@ struct MetaTile {
     outline: Vec<Vec2>,
     width: u8,
 }
-
+use std::fmt;
+impl fmt::Display for MetaTile {
+    // This trait requires `fmt` with this exact signature.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Write strictly the first element into the supplied output
+        // stream: `f`. Returns `fmt::Result` which indicates whether the
+        // operation succeeded or failed. Note that `write!` uses syntax which
+        // is very similar to `println!`.
+        write!(f, "--\n{:?}\n", self.shape)?;
+        write!(f, "{:?}\n", self.transform)?;
+        write!(f, "{:?}\n", self.outline)?;
+        write!(f, "{:?}\n---", self.width)
+    }
+}
 impl MetaTile {
     pub fn new(transform: Affine2, shape: TileType, width: u8, outline: Vec<Vec2>) -> Self {
         Self {
@@ -359,11 +408,16 @@ fn construct_patch(
     for rule in RULES {
         match rule {
             Rule::H => {
-                root.push_back(shapes[0].clone()); //todo: set transform to id?
+                let mut h = shapes[0].data().clone();
+                h.transform = Affine2::IDENTITY;
+                let mut h = Tree::new(h);
+                let ch = shapes[0].clone().abandon();
+                h.append(ch);
+                root.push_back(h);
             }
             Rule::Four(n_child, n_outline, shape, n_vertex) => {
                 let child = root.iter().nth(*n_child).unwrap().data();
-                let poly = shape_to_outline(child.shape);
+                let poly = child.outline.clone();
                 let t = child.transform;
 
                 let p2 = t.transform_point2(poly[(n_outline + 1) % poly.len()]);
@@ -371,12 +425,13 @@ fn construct_patch(
 
                 let mut new_shape = shapes[shape_to_id(*shape)].clone(); //todo
 
-                let new_shape_outline = shape_to_outline(new_shape.data().shape);
+                let new_shape_outline = new_shape.data().outline.clone();
 
                 let p1 = new_shape_outline[*n_vertex];
                 let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
                 // let new_poly = h; //todo
                 let new_transform = match_two(p1, q1, p2, q2);
+
                 // *(new_shape).data_mut().transform = new_transform.into();
                 let e = new_shape.data().width;
                 let c = new_shape.abandon();
@@ -394,21 +449,22 @@ fn construct_patch(
                 let child_p = root.iter().nth(*n_child_p).unwrap().data();
                 let child_q = root.iter().nth(*n_child_q).unwrap().data();
 
-                let p2 = child_p
+                let p2 = child_q
                     .transform
-                    .transform_point2(shape_to_outline(child_q.shape)[*n_outline_q]);
-                let q2 = child_q
+                    .transform_point2(child_q.outline[*n_outline_q]);
+                let q2 = child_p
                     .transform
-                    .transform_point2(shape_to_outline(child_p.shape)[*n_outline_p]);
+                    .transform_point2(child_q.outline[*n_outline_p]);
 
                 let mut new_shape = shapes[shape_to_id(*shape)].clone(); //todo
-                let new_shape_outline = shape_to_outline(new_shape.data().shape);
+                let new_shape_outline = new_shape.data().outline.clone();
                 let p1 = new_shape_outline[*n_vertex];
                 let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
                 let new_transform = match_two(p1, q1, p2, q2);
                 // *(new_shape).data_mut().transform = new_transform.into();
                 let e = new_shape.data().width;
                 let c = new_shape.abandon();
+
                 let mut d = Tree::new(MetaTile {
                     transform: new_transform,
                     shape: *shape,
@@ -465,7 +521,7 @@ fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
     let children: Vec<&trees::Node<MetaTile>> = patch.iter().collect();
     let bps1 = eval_meta_tile(children[8].data(), 2);
     let bps2 = eval_meta_tile(children[21].data(), 2);
-    let rbps = rot_about(bps1, (-2.0 * PI) / 2.0).transform_point2(bps2);
+    let rbps = rot_about(bps1, (-2.0 * PI) / 3.0).transform_point2(bps2);
 
     let p72 = eval_meta_tile(children[7].data(), 2);
     let p252 = eval_meta_tile(children[25].data(), 2);
@@ -487,7 +543,7 @@ fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
 
     let mut new_h = Tree::new(MetaTile {
         transform: Affine2::IDENTITY,
-        width: patch.data().width,
+        width: patch.data().width * 2,
         shape: TileType::H, // todo use actual outline
         outline: new_h_outline,
     });
@@ -531,9 +587,15 @@ fn setup(
     let t = t_init();
     let p = p_init();
     let f = f_init();
+    // let patch = AllFour { h, t, p, f };
     let patch = construct_patch(h.clone(), t.clone(), p.clone(), f.clone());
+    // println!("{}", patch.to_string());
     let a = construct_meta_tiles(patch);
+    // let patch = construct_patch(a.h, a.t, a.p, a.f);
+    // let a = construct_meta_tiles(patch);
+
     // dbg!(patch);
+
     draw_tree(&mut commands, a.h);
     // draw_tree(&mut commands, f);
     // draw_tree(&mut commands, pp);
@@ -553,7 +615,7 @@ fn hat2(tile: MetaTile, z: f32) -> (ShapeBundle, Fill, Stroke) {
         TileType::THat => T_COLOR,
         TileType::PHat => P_COLOR,
         TileType::FHat => F_COLOR,
-        _ => Color::rgba(0.0, 0.0, 0.0, 0.1),
+        _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
     };
 
     (
@@ -563,7 +625,10 @@ fn hat2(tile: MetaTile, z: f32) -> (ShapeBundle, Fill, Stroke) {
             ..default()
         },
         Fill::color(color),
-        Stroke::new(Color::rgba(0.0, 0.0, 0.0, 0.5), 0.2),
+        Stroke::new(
+            Color::rgba(0.0, 0.0, 0.0, 1.0),
+            0.10 * (tile.width as f32).sqrt(),
+        ),
     )
 }
 
