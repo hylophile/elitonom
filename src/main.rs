@@ -4,6 +4,7 @@
 use bevy::{
     math::Affine2,
     prelude::*,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
     // sprite::MaterialMesh2dBundle,
 };
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -217,6 +218,8 @@ fn draw_tree(
     t: Affine2,
     node: trees::Tree<MetaTile>,
     z: f32,
+    mh: &Mesh2dHandle,
+    th: &Handle<ColorMaterial>,
 ) {
     let mut z = z;
     for child in node.iter() {
@@ -226,7 +229,7 @@ fn draw_tree(
         z += 0.0001;
         // commands.spawn(hat2(child.clone(), z));
         // let a = *child.clone().detach().clone();
-        draw_tree(commands, t.mul(tc), child.deep_clone(), z);
+        draw_tree(commands, t.mul(tc), child.deep_clone(), z, &mh, &th);
 
         // *hat.data_mut().transform = *t.mul(ht);
         // if i == 0 {
@@ -235,13 +238,14 @@ fn draw_tree(
     }
 
     if !is_hat(node.data().shape) {
-        z += 10.000;
+        z += 1.000;
     }
     let mut nn = node.data().clone();
     nn.transform = t.mul(nn.transform);
-    // if is_hat(node.data().shape) {
-    commands.spawn(polygon_entity(nn, z));
-    // }
+    // if !is_hat(node.data().shape) {
+    if z < 3.0 {
+        commands.spawn(polygon_entity(nn, z, mh, th));
+    }
 }
 
 fn main() {
@@ -628,8 +632,8 @@ fn rotate_colors_playground(
 fn setup(
     mut commands: Commands,
     // ass: Res<AssetServer>,
-    _meshes: ResMut<Assets<Mesh>>,
-    _materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands
         .spawn(Camera2dBundle {
@@ -640,7 +644,8 @@ fn setup(
             ..default()
         })
         .insert(bevy_pancam::PanCam::default());
-
+    let mh: Mesh2dHandle = meshes.add(Mesh::from(shape::Quad::default())).into();
+    let th = materials.add(ColorMaterial::from(Color::PURPLE));
     let h = h_init();
     let t = t_init();
     let p = p_init();
@@ -651,19 +656,21 @@ fn setup(
     let a = construct_meta_tiles(patch);
     let patch = construct_patch(a.h, a.t, a.p, a.f);
     let a = construct_meta_tiles(patch);
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
 
-    // lag starts here
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
+    // // lag starts here
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
     // dbg!(&a.t.data());
 
     // dbg!(patch);
 
-    draw_tree(&mut commands, Affine2::IDENTITY, a.h, 0.0);
+    draw_tree(&mut commands, Affine2::IDENTITY, a.h, 0.0, &mh, &th);
     // draw_tree(&mut commands, f);
     // draw_tree(&mut commands, pp);
     // draw_tree(&mut commands, ff);
@@ -680,15 +687,32 @@ fn shape_to_fill_color(shape: TileType) -> Color {
     }
 }
 
-type TileEntity = (ShapeBundle, Fill, Stroke, TileType);
+// type TileEntity = (ShapeBundle, Fill, Stroke, TileType);
 // type TileEntity = (SpriteBundle, TileType);
+type TileEntity = (MaterialMesh2dBundle<ColorMaterial>, TileType);
 
-fn polygon_entity(tile: MetaTile, z: f32) -> TileEntity {
+fn polygon_entity(
+    tile: MetaTile,
+    z: f32,
+    mh: &Mesh2dHandle,
+    th: &Handle<ColorMaterial>,
+) -> TileEntity {
     let polygon = shapes::Polygon {
         // points: Vec::from(HAT_OUTLINE),
         points: Vec::from(tile.outline),
         closed: true,
     };
+
+    return (
+        MaterialMesh2dBundle {
+            mesh: mh.clone(),
+            // transform: Transform::default().with_scale(Vec3::splat(128.)),
+            transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
+            material: th.clone(),
+            ..default()
+        },
+        tile.shape,
+    );
 
     // return (
     //     SpriteBundle {
@@ -697,19 +721,19 @@ fn polygon_entity(tile: MetaTile, z: f32) -> TileEntity {
     //     },
     //     tile.shape,
     // );
-    (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&polygon),
-            transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
-            ..default()
-        },
-        Fill::color(shape_to_fill_color(tile.shape)),
-        Stroke::new(
-            Color::rgba(0.0, 0.0, 0.0, 1.0),
-            0.10 * (tile.width as f32), //.sqrt(),
-        ),
-        tile.shape,
-    )
+    // (
+    //     ShapeBundle {
+    //         path: GeometryBuilder::build_as(&polygon),
+    //         transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
+    //         ..default()
+    //     },
+    //     Fill::color(shape_to_fill_color(tile.shape)),
+    //     Stroke::new(
+    //         Color::rgba(0.0, 0.0, 0.0, 1.0),
+    //         0.10 * (tile.width as f32), //.sqrt(),
+    //     ),
+    //     tile.shape,
+    // );
 }
 
 fn mat4_from_affine2(affine2: Affine2, z: f32) -> Mat4 {
