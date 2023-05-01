@@ -232,10 +232,10 @@ fn draw_tree(
 
     let mut nn = node.data().clone();
     nn.transform = t.mul(nn.transform);
-    if !is_hat(node.data().shape) {
-        //|| rand::random::<f32>() < 0.1 {
-        commands.spawn(polygon_entity(nn, z));
-    }
+    // if !is_hat(node.data().shape) {
+    //|| rand::random::<f32>() < 0.1 {
+    commands.spawn(polygon_entity(nn, z));
+    // }
     return z;
 }
 
@@ -248,7 +248,7 @@ fn main() {
         // .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup)
         // .add_system(rotate_colors_playground.in_schedule(CoreSchedule::FixedUpdate))
-        .add_system(rotate_colors_playground)
+        // .add_system(rotate_colors_playground)
         .insert_resource(FixedTime::new_from_secs(1.0 / 30.0))
         .run();
 }
@@ -673,12 +673,12 @@ fn shape_to_fill_color(shape: TileType) -> Color {
         TileType::THat => T_COLOR,
         TileType::PHat => P_COLOR,
         TileType::FHat => F_COLOR,
-        TileType::H => Color::rgba(0.0, 0.0, 1.0, tr),
-        TileType::T => Color::rgba(0.0, 1.0, 1.0, tr),
-        TileType::P => Color::rgba(1.0, 0.0, 1.0, tr),
-        TileType::F => Color::rgba(1.0, 1.0, 0.0, tr),
+        // TileType::H => Color::rgba(0.0, 0.0, 1.0, tr),
+        // TileType::T => Color::rgba(0.0, 1.0, 1.0, tr),
+        // TileType::P => Color::rgba(1.0, 0.0, 1.0, tr),
+        // TileType::F => Color::rgba(1.0, 1.0, 0.0, tr),
         // TileType::Pseudo => _
-        _ => Color::rgba(1.0, 1.0, 1.0, 0.4),
+        _ => Color::rgba(1.0, 1.0, 1.0, 0.0),
         // _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
     }
 }
