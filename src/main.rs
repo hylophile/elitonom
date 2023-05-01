@@ -200,7 +200,47 @@ fn build_out(tree: Tree<MetaTile>) {}
 
 fn build_out_h(tree: Tree<MetaTile>) {}
 
-fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
+fn is_hat(s: TileType) -> bool {
+    match s {
+        TileType::H => false,
+        TileType::T => false,
+        TileType::P => false,
+        TileType::F => false,
+        TileType::H1Hat => true,
+        TileType::HHat => true,
+        TileType::THat => true,
+        TileType::PHat => true,
+        TileType::FHat => true,
+        TileType::Pseudo => true,
+    }
+}
+
+fn draw_tree(commands: &mut Commands, t: Affine2, node: trees::Tree<MetaTile>, z: f32) {
+    let mut z = z;
+    for child in node.iter() {
+        let tc = node.data().transform;
+        // let mut tile = child.data().clone();
+        // tile.transform = t.mul(tile.transform);
+        // z += 0.0001;
+        // commands.spawn(hat2(child.clone(), z));
+        // let a = *child.clone().detach().clone();
+        draw_tree(commands, t.mul(tc), child.deep_clone(), z);
+
+        // *hat.data_mut().transform = *t.mul(ht);
+        // if i == 0 {
+        //     break;
+        // }
+    }
+
+    if !is_hat(node.data().shape) {
+        z += 0.0001;
+    }
+    let mut nn = node.data().clone();
+    nn.transform = t.mul(nn.transform);
+    commands.spawn(hat2(nn, z));
+}
+
+fn draw_tree2(commands: &mut Commands, tree: Tree<MetaTile>) {
     let mut z = 0.0;
     for (i, child) in tree.iter().enumerate() {
         // match child.data().shape {
@@ -215,19 +255,6 @@ fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
         //     TileType::FHat => todo!(),
         // }
         // let mirror = child.data().shape == TileType::H1Hat;
-
-        let is_hat: bool = match child.data().shape {
-            TileType::H => false,
-            TileType::T => false,
-            TileType::P => false,
-            TileType::F => false,
-            TileType::H1Hat => true,
-            TileType::HHat => true,
-            TileType::THat => true,
-            TileType::PHat => true,
-            TileType::FHat => true,
-            TileType::Pseudo => true,
-        };
 
         // if is_hat {
         //     continue;
@@ -387,7 +414,7 @@ fn construct_patch(
     let shapes = [h, t, p, f];
 
     for rule in RULES {
-        dbg!(rule);
+        // dbg!(rule);
         match rule {
             Rule::H => {
                 let mut h = shapes[0].data().clone();
@@ -395,7 +422,7 @@ fn construct_patch(
                 let mut h = Tree::new(h);
                 let ch = shapes[0].clone().abandon();
                 h.append(ch);
-                dbg!(h.data());
+                // dbg!(h.data());
                 root.push_back(h);
             }
             Rule::Four(n_child, n_outline, shape, n_vertex) => {
@@ -426,7 +453,7 @@ fn construct_patch(
                 });
                 d.append(c);
 
-                dbg!(d.data());
+                // dbg!(d.data());
                 root.push_back(d);
             }
             Rule::Six(n_child_p, n_outline_p, n_child_q, n_outline_q, shape, n_vertex) => {
@@ -457,7 +484,7 @@ fn construct_patch(
                 });
                 d.append(c);
 
-                dbg!(d.data());
+                // dbg!(d.data());
                 root.push_back(d);
             }
         }
@@ -622,11 +649,17 @@ fn setup(
     let a = construct_meta_tiles(patch);
     let patch = construct_patch(a.h, a.t, a.p, a.f);
     let a = construct_meta_tiles(patch);
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
+    // let patch = construct_patch(a.h, a.t, a.p, a.f);
+    // let a = construct_meta_tiles(patch);
+    // let patch = construct_patch(a.h, a.t, a.p, a.f);
+    // let a = construct_meta_tiles(patch);
     // dbg!(&a.t.data());
 
     // dbg!(patch);
 
-    draw_tree(&mut commands, a.h);
+    draw_tree(&mut commands, Affine2::IDENTITY, a.h, 0.0);
     // draw_tree(&mut commands, f);
     // draw_tree(&mut commands, pp);
     // draw_tree(&mut commands, ff);
