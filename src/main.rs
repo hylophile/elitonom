@@ -245,15 +245,15 @@ fn draw_tree(commands: &mut Commands, tree: Tree<MetaTile>) {
         // draw_tree(commands, c);
         // continue;
         let t = child.data().transform;
-        for hat in child.iter() {
-            let mut ht = hat.data().clone();
-            ht.transform = t.mul(ht.transform);
-            z += 0.0001;
-            commands.spawn(hat2(ht.clone(), z));
-            // *hat.data_mut().transform = *t.mul(ht);
-        }
-        z += 0.0001;
-        commands.spawn(hat2(child.data().clone(), z));
+        // for hat in child.iter() {
+        //     let mut ht = hat.data().clone();
+        //     ht.transform = t.mul(ht.transform);
+        //     z += 0.0001;
+        //     commands.spawn(hat2(ht.clone(), z));
+        //     // *hat.data_mut().transform = *t.mul(ht);
+        // }
+        // z += 0.0001;
+        // commands.spawn(hat2(child.data().clone(), z));
         // if i == 0 {
         //     break;
         // }
@@ -482,9 +482,9 @@ fn construct_patch(
 
 struct AllFour {
     h: Tree<MetaTile>,
+    t: Tree<MetaTile>,
     p: Tree<MetaTile>,
     f: Tree<MetaTile>,
-    t: Tree<MetaTile>,
 }
 
 fn rot_about(p: Vec2, angle: f32) -> Affine2 {
@@ -540,12 +540,13 @@ fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
 
     new_h_outline.push(new_h_outline[3] - w);
     new_h_outline.push(eval_meta_tile(children[6].data(), 2));
+    dbg!(&new_h_outline);
 
     let mut new_h = Tree::new(MetaTile {
         transform: Affine2::IDENTITY,
         width: patch.data().width * 2,
-        shape: TileType::H, // todo use actual outline
-        outline: new_h_outline,
+        shape: TileType::H,
+        outline: new_h_outline.clone(),
     });
 
     // let t = patch.data().transform;
@@ -560,11 +561,51 @@ fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
         new_h.push_back(a[n_child].clone())
     }
 
+    let new_p_outline = vec![p72, (p72 + (bps1 - llc)), bps1, llc];
+    let mut new_p = Tree::new(MetaTile {
+        transform: Affine2::IDENTITY,
+        width: patch.data().width * 2,
+        shape: TileType::P,
+        outline: new_p_outline,
+    });
+    for n_child in [7, 2, 3, 4, 28] {
+        new_p.push_back(a[n_child].clone())
+    }
+
+    let new_f_outline = vec![
+        bps2,
+        eval_meta_tile(children[24].data(), 2),
+        eval_meta_tile(children[25].data(), 0),
+        p252,
+        (p252 + (llc - bps1)),
+    ];
+    let mut new_f = Tree::new(MetaTile {
+        transform: Affine2::IDENTITY,
+        width: patch.data().width * 2,
+        shape: TileType::F,
+        outline: new_f_outline,
+    });
+    for n_child in [21, 20, 22, 23, 24, 25] {
+        new_f.push_back(a[n_child].clone())
+    }
+
+    let aaa = new_h_outline[2];
+    let bbb = (new_h_outline[1] + (new_h_outline[4] - new_h_outline[5]));
+    let ccc = rot_about(bbb, -PI / 3.0).transform_point2(aaa);
+    let new_t_outline = vec![bbb, ccc, aaa];
+    let mut new_t = Tree::new(MetaTile {
+        transform: Affine2::IDENTITY,
+        width: patch.data().width * 2,
+        shape: TileType::T,
+        outline: new_t_outline,
+    });
+    new_t.push_back(a[11].clone());
+
     AllFour {
         h: new_h.clone(),
-        p: new_h.clone(),
-        f: new_h.clone(),
-        t: new_h.clone(),
+        t: new_t.clone(),
+        p: new_p.clone(),
+        f: new_f.clone(),
     }
 }
 
@@ -591,12 +632,12 @@ fn setup(
     let patch = construct_patch(h.clone(), t.clone(), p.clone(), f.clone());
     // println!("{}", patch.to_string());
     let a = construct_meta_tiles(patch);
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
 
     // dbg!(patch);
 
-    draw_tree(&mut commands, a.h);
+    draw_tree(&mut commands, a.p);
     // draw_tree(&mut commands, f);
     // draw_tree(&mut commands, pp);
     // draw_tree(&mut commands, ff);
