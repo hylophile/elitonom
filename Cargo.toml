@@ -11,6 +11,7 @@ bevy = { version = "0.10.1", features = ["dynamic_linking", "wayland"] }
 bevy-inspector-egui = "0.18.3"
 bevy_pancam = "0.8.0"
 bevy_prototype_lyon = "0.8.0"
+rand = "0.8.5"
 trees = "0.4.2"
 
 # Enable a small amount of optimization in debug mode

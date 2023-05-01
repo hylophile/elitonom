@@ -9,12 +9,13 @@ use bevy::{
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
+use rand::rngs::ThreadRng;
 use std::{f32::consts::PI, ops::Mul};
 use trees::Tree;
 // const SCALE: f32 = 10.0;
 const SQ3: f32 = 1.732_050_8;
 const HR3: f32 = 0.866_025_4;
-
+use rand::prelude::*;
 fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
     Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
 }
@@ -247,7 +248,7 @@ fn main() {
         // .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup)
         // .add_system(rotate_colors_playground.in_schedule(CoreSchedule::FixedUpdate))
-        // .add_system(rotate_colors_playground)
+        .add_system(rotate_colors_playground)
         .insert_resource(FixedTime::new_from_secs(1.0 / 30.0))
         .run();
 }
@@ -598,7 +599,7 @@ fn rotate_colors_playground(
         // let a = a / 100.0;
         // transform.rotate_z(0.125_f32.to_radians());
         let tt = transform.translation / 2.0;
-        transform.rotate_around(tt * -1.0, Quat::from_rotation_z((0.125_f32).to_radians()));
+        transform.rotate_around(tt * -1.0, Quat::from_rotation_z((1.0_f32).to_radians()));
         let a = time.elapsed_seconds();
         let b = shape_to_fill_color(*shape);
         let c = Color::rgba(
@@ -645,12 +646,14 @@ fn setup(
     let a = construct_meta_tiles(patch);
     let patch = construct_patch(a.h, a.t, a.p, a.f);
     let a = construct_meta_tiles(patch);
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
+    let patch = construct_patch(a.h, a.t, a.p, a.f);
+    let a = construct_meta_tiles(patch);
 
     // lag starts here
+    // let patch = construct_patch(a.h, a.t, a.p, a.f);
+    // let a = construct_meta_tiles(patch);
     // let patch = construct_patch(a.h, a.t, a.p, a.f);
     // let a = construct_meta_tiles(patch);
     // dbg!(&a.t.data());
@@ -663,13 +666,20 @@ fn setup(
 }
 
 fn shape_to_fill_color(shape: TileType) -> Color {
+    let tr = 0.4;
     match shape {
         TileType::H1Hat => H_MIRROR_COLOR,
         TileType::HHat => H_COLOR,
         TileType::THat => T_COLOR,
         TileType::PHat => P_COLOR,
         TileType::FHat => F_COLOR,
-        _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
+        TileType::H => Color::rgba(0.0, 0.0, 1.0, tr),
+        TileType::T => Color::rgba(0.0, 1.0, 1.0, tr),
+        TileType::P => Color::rgba(1.0, 0.0, 1.0, tr),
+        TileType::F => Color::rgba(1.0, 1.0, 0.0, tr),
+        // TileType::Pseudo => _
+        _ => Color::rgba(1.0, 1.0, 1.0, 0.4),
+        // _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
     }
 }
 
