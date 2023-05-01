@@ -216,17 +216,12 @@ fn draw_tree(
     // ass: &Res<AssetServer>,
     t: Affine2,
     node: trees::Tree<MetaTile>,
-    z: f32,
-) {
-    let mut z = z;
+    mut z: f32,
+) -> f32 {
     for child in node.iter() {
         let tc = node.data().transform;
-        // let mut tile = child.data().clone();
-        // tile.transform = t.mul(tile.transform);
-        z += 0.0001;
-        // commands.spawn(hat2(child.clone(), z));
-        // let a = *child.clone().detach().clone();
-        draw_tree(commands, t.mul(tc), child.deep_clone(), z);
+        z = draw_tree(commands, t.mul(tc), child.deep_clone(), z);
+        z += 0.00001;
 
         // *hat.data_mut().transform = *t.mul(ht);
         // if i == 0 {
@@ -234,14 +229,13 @@ fn draw_tree(
         // }
     }
 
-    if !is_hat(node.data().shape) {
-        z += 10.000;
-    }
     let mut nn = node.data().clone();
     nn.transform = t.mul(nn.transform);
-    // if is_hat(node.data().shape) {
-    commands.spawn(polygon_entity(nn, z));
-    // }
+    if !is_hat(node.data().shape) {
+        //|| rand::random::<f32>() < 0.1 {
+        commands.spawn(polygon_entity(nn, z));
+    }
+    return z;
 }
 
 fn main() {
@@ -662,8 +656,7 @@ fn setup(
     // dbg!(&a.t.data());
 
     // dbg!(patch);
-
-    draw_tree(&mut commands, Affine2::IDENTITY, a.h, 0.0);
+    _ = draw_tree(&mut commands, Affine2::IDENTITY, a.h, 0.0);
     // draw_tree(&mut commands, f);
     // draw_tree(&mut commands, pp);
     // draw_tree(&mut commands, ff);
