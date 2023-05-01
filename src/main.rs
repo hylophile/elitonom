@@ -6,10 +6,10 @@ use bevy::{
     prelude::*,
     // sprite::MaterialMesh2dBundle,
 };
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use std::{f32::consts::PI, fmt::Display, ops::Mul};
+use std::{f32::consts::PI, ops::Mul};
 use trees::Tree;
 // const SCALE: f32 = 10.0;
 const SQ3: f32 = 1.732_050_8;
@@ -196,10 +196,6 @@ fn f_init() -> Tree<MetaTile> {
     f
 }
 
-fn build_out(tree: Tree<MetaTile>) {}
-
-fn build_out_h(tree: Tree<MetaTile>) {}
-
 fn is_hat(s: TileType) -> bool {
     match s {
         TileType::H => false,
@@ -215,13 +211,19 @@ fn is_hat(s: TileType) -> bool {
     }
 }
 
-fn draw_tree(commands: &mut Commands, t: Affine2, node: trees::Tree<MetaTile>, z: f32) {
+fn draw_tree(
+    commands: &mut Commands,
+    // ass: &Res<AssetServer>,
+    t: Affine2,
+    node: trees::Tree<MetaTile>,
+    z: f32,
+) {
     let mut z = z;
     for child in node.iter() {
         let tc = node.data().transform;
         // let mut tile = child.data().clone();
         // tile.transform = t.mul(tile.transform);
-        // z += 0.0001;
+        z += 0.0001;
         // commands.spawn(hat2(child.clone(), z));
         // let a = *child.clone().detach().clone();
         draw_tree(commands, t.mul(tc), child.deep_clone(), z);
@@ -233,59 +235,13 @@ fn draw_tree(commands: &mut Commands, t: Affine2, node: trees::Tree<MetaTile>, z
     }
 
     if !is_hat(node.data().shape) {
-        z += 0.0001;
+        z += 10.000;
     }
     let mut nn = node.data().clone();
     nn.transform = t.mul(nn.transform);
-    commands.spawn(hat2(nn, z));
-}
-
-fn draw_tree2(commands: &mut Commands, tree: Tree<MetaTile>) {
-    let mut z = 0.0;
-    for (i, child) in tree.iter().enumerate() {
-        // match child.data().shape {
-        //     TileType::H => todo!(),
-        //     TileType::T => todo!(),
-        //     TileType::P => todo!(),
-        //     TileType::F => todo!(),
-        //     TileType::H1Hat => todo!(),
-        //     TileType::HHat => todo!(),
-        //     TileType::THat => todo!(),
-        //     TileType::PHat => todo!(),
-        //     TileType::FHat => todo!(),
-        // }
-        // let mirror = child.data().shape == TileType::H1Hat;
-
-        // if is_hat {
-        //     continue;
-        // }
-        // println!("{}", &child.data());
-        // let x = trees::Forest::new();
-        // x.append(child);
-        // let a: trees::Forest<MetaTile> = child
-        //     .clone()
-        //     .iter_mut()
-        //     .map(|mut sub| sub.detach())
-        //     .collect();
-
-        // let c: Tree<MetaTile> = *child.detach();
-        // draw_tree(commands, c);
-        // continue;
-        let t = child.data().transform;
-        for hat in child.iter() {
-            let mut ht = hat.data().clone();
-            ht.transform = t.mul(ht.transform);
-            z += 0.0001;
-            commands.spawn(hat2(ht.clone(), z));
-            // *hat.data_mut().transform = *t.mul(ht);
-        }
-        z += 0.0001;
-        commands.spawn(hat2(child.data().clone(), z));
-        // if i == 0 {
-        //     break;
-        // }
-    }
-    commands.spawn(hat2(tree.data().clone(), z));
+    // if is_hat(node.data().shape) {
+    commands.spawn(polygon_entity(nn, z));
+    // }
 }
 
 fn main() {
@@ -294,8 +250,11 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(PanCamPlugin::default())
         .add_plugin(ShapePlugin)
-        .add_plugin(WorldInspectorPlugin::new())
+        // .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(setup)
+        // .add_system(rotate_colors_playground.in_schedule(CoreSchedule::FixedUpdate))
+        // .add_system(rotate_colors_playground)
+        .insert_resource(FixedTime::new_from_secs(1.0 / 30.0))
         .run();
 }
 
@@ -624,15 +583,58 @@ fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
     }
 }
 
+fn rotate_colors_playground(
+    mut query: Query<(&mut Fill, &mut TileType, &mut Transform)>,
+    time: Res<Time>,
+) {
+    // let mut c = query.;
+    // *c = Fill::color(Color::rgba(1.0, 1.0, 1.0, 0.1));
+    for (mut fill, shape, mut transform) in query.iter_mut() {
+        // if fill.color.r() > 0.9 || fill.color.g() > 0.9 || fill.color.b() > 0.9 {
+        //     fill.color = Color::rgba(
+        //         fill.color.r() - 0.01,
+        //         fill.color.g() - 0.01,
+        //         fill.color.b() - 0.01,
+        //         1.0,
+        //     );
+        // } else if fill.color.r() < 0.1 || fill.color.g() < 0.1 || fill.color.b() < 0.1 {
+        //     fill.color = fill.color + Color::rgba(0.01, 0.01, 0.01, 0.0);
+        // }
+        // let a = (((time.elapsed_seconds() * 100.0) as u8) % 100) as f32;
+        // let a = a / 100.0;
+        // transform.rotate_z(0.125_f32.to_radians());
+        let tt = transform.translation / 2.0;
+        transform.rotate_around(tt * -1.0, Quat::from_rotation_z((0.125_f32).to_radians()));
+        let a = time.elapsed_seconds();
+        let b = shape_to_fill_color(*shape);
+        let c = Color::rgba(
+            b.r() * (a.sin() + 1.0),
+            b.g() * (a.cos() + 1.0),
+            b.b() * ((a + PI).cos() + 1.0),
+            1.0 * b.a(),
+        );
+        // let a = Color::rgba(
+        //     (b.r() * a.sin()).abs(),
+        //     (b.g() * a.sin()).abs(),
+        //     (b.b() * a.sin()).abs(),
+        //     1.0 * b.a(),
+        // );
+        // fill.color = Color::rgba(a.sin(), a.cos(), a.tan(), 1.0)
+        // fill.color = Color::rgba(a, a, a, 1.0);
+        fill.color = c;
+    }
+}
+
 fn setup(
     mut commands: Commands,
+    // ass: Res<AssetServer>,
     _meshes: ResMut<Assets<Mesh>>,
     _materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands
         .spawn(Camera2dBundle {
             projection: OrthographicProjection {
-                scale: 0.05,
+                scale: 0.1,
                 ..default()
             },
             ..default()
@@ -649,10 +651,12 @@ fn setup(
     let a = construct_meta_tiles(patch);
     let patch = construct_patch(a.h, a.t, a.p, a.f);
     let a = construct_meta_tiles(patch);
-    let patch = construct_patch(a.h, a.t, a.p, a.f);
-    let a = construct_meta_tiles(patch);
     // let patch = construct_patch(a.h, a.t, a.p, a.f);
     // let a = construct_meta_tiles(patch);
+    // let patch = construct_patch(a.h, a.t, a.p, a.f);
+    // let a = construct_meta_tiles(patch);
+
+    // lag starts here
     // let patch = construct_patch(a.h, a.t, a.p, a.f);
     // let a = construct_meta_tiles(patch);
     // dbg!(&a.t.data());
@@ -665,33 +669,46 @@ fn setup(
     // draw_tree(&mut commands, ff);
 }
 
-fn hat2(tile: MetaTile, z: f32) -> (ShapeBundle, Fill, Stroke) {
-    let hat_polygon = shapes::Polygon {
-        // points: Vec::from(HAT_OUTLINE),
-        points: Vec::from(tile.outline),
-        closed: true,
-    };
-
-    let color = match tile.shape {
+fn shape_to_fill_color(shape: TileType) -> Color {
+    match shape {
         TileType::H1Hat => H_MIRROR_COLOR,
         TileType::HHat => H_COLOR,
         TileType::THat => T_COLOR,
         TileType::PHat => P_COLOR,
         TileType::FHat => F_COLOR,
         _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
+    }
+}
+
+type TileEntity = (ShapeBundle, Fill, Stroke, TileType);
+// type TileEntity = (SpriteBundle, TileType);
+
+fn polygon_entity(tile: MetaTile, z: f32) -> TileEntity {
+    let polygon = shapes::Polygon {
+        // points: Vec::from(HAT_OUTLINE),
+        points: Vec::from(tile.outline),
+        closed: true,
     };
 
+    // return (
+    //     SpriteBundle {
+    //         texture: asset_server.load("hat-monotile.png"), // nope, performance is worse
+    //         ..default()
+    //     },
+    //     tile.shape,
+    // );
     (
         ShapeBundle {
-            path: GeometryBuilder::build_as(&hat_polygon),
+            path: GeometryBuilder::build_as(&polygon),
             transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
             ..default()
         },
-        Fill::color(color),
+        Fill::color(shape_to_fill_color(tile.shape)),
         Stroke::new(
             Color::rgba(0.0, 0.0, 0.0, 1.0),
-            0.10 * (tile.width as f32).sqrt(),
+            0.10 * (tile.width as f32), //.sqrt(),
         ),
+        tile.shape,
     )
 }
 
