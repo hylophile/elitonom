@@ -241,7 +241,9 @@ fn draw_tree(
 
 fn main() {
     App::new()
-        .insert_resource(Msaa::Sample4)
+        // .insert_resource(Msaa::Sample4)
+        // .insert_resource(ClearColor(Color::rgb(0.8,0.8,0.8)))
+        // .insert_resource(ClearColor(Color::rgb(0.8,0.8,0.8)))
         .add_plugins(DefaultPlugins)
         .add_plugin(PanCamPlugin::default())
         .add_plugin(ShapePlugin)
@@ -599,7 +601,7 @@ fn rotate_colors_playground(
         // let a = a / 100.0;
         // transform.rotate_z(0.125_f32.to_radians());
         let tt = transform.translation / 2.0;
-        transform.rotate_around(tt * -1.0, Quat::from_rotation_z((1.0_f32).to_radians()));
+        transform.rotate_around(tt * -1.0, Quat::from_rotation_z((0.5_f32).to_radians()));
         let a = time.elapsed_seconds();
         let b = shape_to_fill_color(*shape);
         let c = Color::rgba(
