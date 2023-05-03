@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
     // sprite::MaterialMesh2dBundle,
 };
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
 use std::{f32::consts::PI, ops::Mul};
@@ -212,6 +212,83 @@ fn is_hat(s: TileType) -> bool {
     }
 }
 
+fn make_polygons(points: &mut Vec<shapes::Polygon>, t: Affine2, node: trees::Tree<MetaTile>) {
+    let nd = node.data();
+    for child in node.iter() {
+        make_polygons(points, t.mul(nd.transform), child.deep_clone());
+    }
+
+    if is_hat(nd.shape) {
+        let tt = t.mul(nd.transform);
+        let po = nd.outline.iter().map(|p| tt.transform_point2(*p)).collect();
+        points.push(shapes::Polygon {
+            points: po,
+            closed: true,
+        });
+    }
+}
+
+fn setup(
+    mut commands: Commands,
+    // ass: Res<AssetServer>,
+    _meshes: ResMut<Assets<Mesh>>,
+    _materials: ResMut<Assets<ColorMaterial>>,
+) {
+    commands
+        .spawn(Camera2dBundle {
+            projection: OrthographicProjection {
+                scale: 0.1,
+                ..default()
+            },
+            ..default()
+        })
+        .insert(bevy_pancam::PanCam::default());
+
+    let h = h_init();
+    let t = t_init();
+    let p = p_init();
+    let f = f_init();
+    let mut a = AllFour {
+        h: h.clone(),
+        t: t.clone(),
+        p: p.clone(),
+        f: f.clone(),
+    };
+
+    for _ in 0..6 {
+        let patch = construct_patch(a.h, a.t, a.p, a.f);
+        a = construct_meta_tiles(patch);
+    }
+    let which_meta_tile = a.h;
+
+    // _ = draw_tree(&mut commands, Affine2::IDENTITY, which_meta_tile, 0.0);
+
+    let mut g = GeometryBuilder::new();
+    let mut polys = Vec::new();
+    make_polygons(&mut polys, Affine2::IDENTITY, which_meta_tile);
+
+    for tile in polys {
+        g = g.add(&tile);
+    }
+
+    // std::process::exit(0);
+
+    commands.spawn((
+        ShapeBundle {
+            path: g.build(),
+            // transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
+            ..default()
+        },
+        // Fill::color(shape_to_fill_color(TileType::H1Hat)),
+        Stroke::new(
+            Color::rgba(0.0, 0.0, 0.0, 1.0),
+            // 0.10 * (tile.width as f32), //.sqrt(),
+            // 0.15,
+            0.15,
+        ),
+    ));
+}
+
 fn draw_tree(
     commands: &mut Commands,
     // ass: &Res<AssetServer>,
@@ -245,7 +322,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(PanCamPlugin::default())
         .add_plugin(ShapePlugin)
-        // .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(WorldInspectorPlugin::new())
+        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
         .add_startup_system(setup)
         // .add_system(rotate_colors_playground.in_schedule(CoreSchedule::FixedUpdate))
         // .add_system(rotate_colors_playground)
@@ -620,42 +698,6 @@ fn rotate_colors_playground(
     }
 }
 
-fn setup(
-    mut commands: Commands,
-    // ass: Res<AssetServer>,
-    _meshes: ResMut<Assets<Mesh>>,
-    _materials: ResMut<Assets<ColorMaterial>>,
-) {
-    commands
-        .spawn(Camera2dBundle {
-            projection: OrthographicProjection {
-                scale: 0.1,
-                ..default()
-            },
-            ..default()
-        })
-        .insert(bevy_pancam::PanCam::default());
-
-    let h = h_init();
-    let t = t_init();
-    let p = p_init();
-    let f = f_init();
-    let mut a = AllFour {
-        h: h.clone(),
-        t: t.clone(),
-        p: p.clone(),
-        f: f.clone(),
-    };
-
-    for _ in 0..5 {
-        let patch = construct_patch(a.h, a.t, a.p, a.f);
-        a = construct_meta_tiles(patch);
-    }
-    let which_meta_tile = a.p;
-
-    _ = draw_tree(&mut commands, Affine2::IDENTITY, which_meta_tile, 0.0);
-}
-
 fn shape_to_fill_color(shape: TileType) -> Color {
     let tr = 0.4;
     match shape {
@@ -680,7 +722,11 @@ type TileEntity = (ShapeBundle, Fill, Stroke, TileType);
 fn polygon_entity(tile: MetaTile, z: f32) -> TileEntity {
     let polygon = shapes::Polygon {
         // points: Vec::from(HAT_OUTLINE),
-        points: Vec::from(tile.outline),
+        points: tile
+            .outline
+            .iter()
+            .map(|p| tile.transform.transform_point2(*p))
+            .collect(),
         closed: true,
     };
 
@@ -694,7 +740,7 @@ fn polygon_entity(tile: MetaTile, z: f32) -> TileEntity {
     (
         ShapeBundle {
             path: GeometryBuilder::build_as(&polygon),
-            transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
+            // transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
             ..default()
         },
         Fill::color(shape_to_fill_color(tile.shape)),
