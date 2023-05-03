@@ -1,5 +1,4 @@
-//! Shows how to render simple primitive shapes with a single color.
-#![feature(fn_traits)]
+const LEVELS: usize = 4;
 
 use bevy::{
     math::Affine2,
@@ -9,13 +8,14 @@ use bevy::{
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use rand::rngs::ThreadRng;
 use std::{f32::consts::PI, ops::Mul};
 use trees::Tree;
 // const SCALE: f32 = 10.0;
+//
 const SQ3: f32 = 1.732_050_8;
 const HR3: f32 = 0.866_025_4;
 use rand::prelude::*;
+
 fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
     Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
 }
@@ -232,8 +232,8 @@ fn draw_tree(
 
     let mut nn = node.data().clone();
     nn.transform = t.mul(nn.transform);
-    // if !is_hat(node.data().shape) {
     //|| rand::random::<f32>() < 0.1 {
+    // if !is_hat(node.data().shape) {
     commands.spawn(polygon_entity(nn, z));
     // }
     return z;
@@ -320,7 +320,7 @@ struct MetaTile {
     transform: Affine2,
     shape: TileType,
     outline: Vec<Vec2>,
-    width: u8,
+    width: usize,
 }
 use std::fmt;
 impl fmt::Display for MetaTile {
@@ -333,7 +333,7 @@ impl fmt::Display for MetaTile {
     }
 }
 impl MetaTile {
-    pub fn new(transform: Affine2, shape: TileType, width: u8, outline: Vec<Vec2>) -> Self {
+    pub fn new(transform: Affine2, shape: TileType, width: usize, outline: Vec<Vec2>) -> Self {
         Self {
             transform,
             shape,
@@ -595,7 +595,7 @@ fn rotate_colors_playground(
         // } else if fill.color.r() < 0.1 || fill.color.g() < 0.1 || fill.color.b() < 0.1 {
         //     fill.color = fill.color + Color::rgba(0.01, 0.01, 0.01, 0.0);
         // }
-        // let a = (((time.elapsed_seconds() * 100.0) as u8) % 100) as f32;
+        // let a = (((time.elapsed_seconds() * 100.0) as usize) % 100) as f32;
         // let a = a / 100.0;
         // transform.rotate_z(0.125_f32.to_radians());
         let tt = transform.translation / 2.0;
@@ -640,29 +640,20 @@ fn setup(
     let t = t_init();
     let p = p_init();
     let f = f_init();
-    // let patch = AllFour { h, t, p, f };
-    let patch = construct_patch(h.clone(), t.clone(), p.clone(), f.clone());
-    // println!("{}", patch.to_string());
-    let a = construct_meta_tiles(patch);
-    let patch = construct_patch(a.h, a.t, a.p, a.f);
-    let a = construct_meta_tiles(patch);
-    let patch = construct_patch(a.h, a.t, a.p, a.f);
-    let a = construct_meta_tiles(patch);
-    let patch = construct_patch(a.h, a.t, a.p, a.f);
-    let a = construct_meta_tiles(patch);
+    let mut a = AllFour {
+        h: h.clone(),
+        t: t.clone(),
+        p: p.clone(),
+        f: f.clone(),
+    };
 
-    // lag starts here
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
-    // let patch = construct_patch(a.h, a.t, a.p, a.f);
-    // let a = construct_meta_tiles(patch);
-    // dbg!(&a.t.data());
+    for _ in 0..5 {
+        let patch = construct_patch(a.h, a.t, a.p, a.f);
+        a = construct_meta_tiles(patch);
+    }
+    let which_meta_tile = a.p;
 
-    // dbg!(patch);
-    _ = draw_tree(&mut commands, Affine2::IDENTITY, a.h, 0.0);
-    // draw_tree(&mut commands, f);
-    // draw_tree(&mut commands, pp);
-    // draw_tree(&mut commands, ff);
+    _ = draw_tree(&mut commands, Affine2::IDENTITY, which_meta_tile, 0.0);
 }
 
 fn shape_to_fill_color(shape: TileType) -> Color {
@@ -709,7 +700,9 @@ fn polygon_entity(tile: MetaTile, z: f32) -> TileEntity {
         Fill::color(shape_to_fill_color(tile.shape)),
         Stroke::new(
             Color::rgba(0.0, 0.0, 0.0, 1.0),
-            0.10 * (tile.width as f32), //.sqrt(),
+            // 0.10 * (tile.width as f32), //.sqrt(),
+            // 0.15,
+            0.10 * (tile.width as f32).sqrt(),
         ),
         tile.shape,
     )
