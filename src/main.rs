@@ -212,19 +212,40 @@ fn is_hat(s: TileType) -> bool {
     }
 }
 
-fn make_polygons(points: &mut Vec<shapes::Polygon>, t: Affine2, node: trees::Tree<MetaTile>) {
+type HatPoints = Vec<shapes::Polygon>;
+struct HatPolys {
+    h: HatPoints,
+    h1: HatPoints,
+    t: HatPoints,
+    f: HatPoints,
+    p: HatPoints,
+}
+
+fn make_polygons(polys: &mut HatPolys, t: Affine2, node: trees::Tree<MetaTile>) {
     let nd = node.data();
     for child in node.iter() {
-        make_polygons(points, t.mul(nd.transform), child.deep_clone());
+        make_polygons(polys, t.mul(nd.transform), child.deep_clone());
     }
 
-    if is_hat(nd.shape) {
-        let tt = t.mul(nd.transform);
-        let po = nd.outline.iter().map(|p| tt.transform_point2(*p)).collect();
-        points.push(shapes::Polygon {
-            points: po,
-            closed: true,
-        });
+    // if is_hat(nd.shape) {
+    let tt = t.mul(nd.transform);
+    let points = nd.outline.iter().map(|p| tt.transform_point2(*p)).collect();
+    let poly = shapes::Polygon {
+        points,
+        closed: true,
+    };
+    match nd.shape {
+        TileType::H1Hat => polys.h1.push(poly),
+        TileType::HHat => polys.h.push(poly),
+        TileType::THat => polys.t.push(poly),
+        TileType::PHat => polys.p.push(poly),
+        TileType::FHat => polys.f.push(poly),
+        _ => (),
+        // TileType::H => todo!(),
+        // TileType::T => todo!(),
+        // TileType::P => todo!(),
+        // TileType::F => todo!(),
+        // TileType::Pseudo => todo!(),
     }
 }
 
@@ -259,34 +280,57 @@ fn setup(
         let patch = construct_patch(a.h, a.t, a.p, a.f);
         a = construct_meta_tiles(patch);
     }
+    let cap = a.h.node_count().clone();
     let which_meta_tile = a.h;
 
     // _ = draw_tree(&mut commands, Affine2::IDENTITY, which_meta_tile, 0.0);
 
-    let mut g = GeometryBuilder::new();
-    let mut polys = Vec::new();
+    let mut polys = HatPolys {
+        h: Vec::with_capacity(cap),
+        h1: Vec::with_capacity(cap),
+        t: Vec::with_capacity(cap),
+        f: Vec::with_capacity(cap),
+        p: Vec::with_capacity(cap),
+    };
     make_polygons(&mut polys, Affine2::IDENTITY, which_meta_tile);
 
-    for tile in polys {
-        g = g.add(&tile);
+    for shape in [
+        TileType::H1Hat,
+        TileType::HHat,
+        TileType::THat,
+        TileType::FHat,
+        TileType::PHat,
+    ] {
+        let polys = match shape {
+            TileType::H1Hat => &polys.h1,
+            TileType::HHat => &polys.h,
+            TileType::THat => &polys.t,
+            TileType::PHat => &polys.p,
+            TileType::FHat => &polys.f,
+            _ => panic!(),
+        };
+        let mut g = GeometryBuilder::new();
+        for tile in polys {
+            g = g.add(tile);
+        }
+
+        // std::process::exit(0);
+
+        commands.spawn((
+            ShapeBundle {
+                path: g.build(),
+                // transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
+                ..default()
+            },
+            Fill::color(shape_to_fill_color(shape)),
+            // Stroke::new(
+            //     Color::rgba(0.0, 0.0, 0.0, 1.0),
+            //     // 0.10 * (tile.width as f32), //.sqrt(),
+            //     // 0.15,
+            //     0.15,
+            // ),
+        ));
     }
-
-    // std::process::exit(0);
-
-    commands.spawn((
-        ShapeBundle {
-            path: g.build(),
-            // transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
-            ..default()
-        },
-        // Fill::color(shape_to_fill_color(TileType::H1Hat)),
-        Stroke::new(
-            Color::rgba(0.0, 0.0, 0.0, 1.0),
-            // 0.10 * (tile.width as f32), //.sqrt(),
-            // 0.15,
-            0.15,
-        ),
-    ));
 }
 
 fn draw_tree(
