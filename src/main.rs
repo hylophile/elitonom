@@ -49,6 +49,12 @@ const HAT_OUTLINE: &[Vec2] = &[
     Vec2::new(0.0, SQ3),
 ];
 
+// const H_COLOR: Color = Color::BLACK;
+// const H_MIRROR_COLOR: Color = Color::BLACK;
+// const T_COLOR: Color = Color::BLACK;
+
+// const P_COLOR: Color = Color::BLACK;
+// const F_COLOR: Color = Color::WHITE;
 const H_COLOR: Color = Color::WHITE;
 const H_MIRROR_COLOR: Color = Color::SEA_GREEN;
 const T_COLOR: Color = Color::TEAL;
@@ -258,7 +264,7 @@ fn setup(
     commands
         .spawn(Camera2dBundle {
             projection: OrthographicProjection {
-                scale: 0.1,
+                scale: 1.0,
                 ..default()
             },
             ..default()
@@ -276,7 +282,7 @@ fn setup(
         f: f.clone(),
     };
 
-    for _ in 0..6 {
+    for _ in 0..LEVELS {
         let patch = construct_patch(a.h, a.t, a.p, a.f);
         a = construct_meta_tiles(patch);
     }
@@ -292,15 +298,23 @@ fn setup(
         f: Vec::with_capacity(cap),
         p: Vec::with_capacity(cap),
     };
-    make_polygons(&mut polys, Affine2::IDENTITY, which_meta_tile);
+    make_polygons(
+        &mut polys,
+        Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
+        which_meta_tile,
+    );
+    std::process::exit(0);
 
-    for shape in [
+    for (i, shape) in [
         TileType::H1Hat,
         TileType::HHat,
         TileType::THat,
         TileType::FHat,
         TileType::PHat,
-    ] {
+    ]
+    .iter()
+    .enumerate()
+    {
         let polys = match shape {
             TileType::H1Hat => &polys.h1,
             TileType::HHat => &polys.h,
@@ -319,16 +333,16 @@ fn setup(
         commands.spawn((
             ShapeBundle {
                 path: g.build(),
-                // transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
+                transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
                 ..default()
             },
-            Fill::color(shape_to_fill_color(shape)),
-            // Stroke::new(
-            //     Color::rgba(0.0, 0.0, 0.0, 1.0),
-            //     // 0.10 * (tile.width as f32), //.sqrt(),
-            //     // 0.15,
-            //     0.15,
-            // ),
+            Fill::color(shape_to_fill_color(*shape)),
+            Stroke::new(
+                Color::rgba(0.0, 0.0, 0.0, 1.0),
+                // 0.10 * (tile.width as f32), //.sqrt(),
+                // 0.15,
+                0.5,
+            ),
         ));
     }
 }
@@ -693,10 +707,10 @@ fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
     new_t.push_back(a[11].clone());
 
     AllFour {
-        h: new_h.clone(),
-        t: new_t.clone(),
-        p: new_p.clone(),
-        f: new_f.clone(),
+        h: new_h,
+        t: new_t,
+        p: new_p,
+        f: new_f,
     }
 }
 
