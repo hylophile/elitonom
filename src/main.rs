@@ -8,16 +8,20 @@ use bevy::{
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
+use petgraph::{visit::Bfs, Graph};
 use std::{f32::consts::PI, ops::Mul};
-use trees::Tree;
+// use trees::Tree;
+type Tree = Graph<MetaTile, (), petgraph::Directed>;
 // const SCALE: f32 = 10.0;
 //
 const SQ3: f32 = 1.732_050_8;
 const HR3: f32 = 0.866_025_4;
 use rand::prelude::*;
 
+use petgraph::graph::NodeIndex;
 fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
     Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
+    // let mut tree :  = Graph::new();
 }
 
 #[test]
@@ -72,32 +76,39 @@ const H_OUTLINE: &[Vec2] = &[
     Vec2::new(-0.5, HR3),
 ];
 
-fn h_init() -> Tree<MetaTile> {
-    let mut h = Tree::new(MetaTile {
+fn h_init() -> Tree {
+    let mut h = Tree::new();
+    let h_root = h.add_node(MetaTile {
         transform: Affine2::IDENTITY,
         shape: TileType::H,
         width: 2,
         outline: H_OUTLINE.to_vec(),
     });
-    h.push_back(Tree::new(MetaTile {
+
+    let h_0 = h.add_node(MetaTile {
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[5], H_OUTLINE[0]),
         shape: TileType::HHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
-    h.push_back(Tree::new(MetaTile {
+    });
+    h.add_edge(h_root, h_0, ());
+
+    let h_1 = h.add_node(MetaTile {
         transform: match_two(HAT_OUTLINE[9], HAT_OUTLINE[11], H_OUTLINE[1], H_OUTLINE[2]),
         shape: TileType::HHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
-    h.push_back(Tree::new(MetaTile {
+    });
+    h.add_edge(h_root, h_1, ());
+
+    let h_2 = h.add_node(MetaTile {
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[3], H_OUTLINE[4]),
         shape: TileType::HHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
-    h.push_back(Tree::new(MetaTile {
+    });
+    h.add_edge(h_root, h_2, ());
+    let h_3 = h.add_node(MetaTile {
         transform: Affine2::from_cols_array_2d(&[
             [-0.25, 0.5 * HR3],
             [0.5 * HR3, 0.25],
@@ -106,7 +117,8 @@ fn h_init() -> Tree<MetaTile> {
         shape: TileType::H1Hat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
+    });
+    h.add_edge(h_root, h_3, ());
 
     h
 }
@@ -117,19 +129,22 @@ const T_OUTLINE: &[Vec2] = &[
     Vec2::new(1.5, 3.0 * HR3),
 ];
 
-fn t_init() -> Tree<MetaTile> {
-    let mut t = Tree::new(MetaTile {
+fn t_init() -> Tree {
+    let mut t = Tree::new();
+    let t_root = t.add_node(MetaTile {
         transform: Affine2::IDENTITY,
         shape: TileType::T,
         width: 2,
         outline: T_OUTLINE.to_vec(),
     });
-    t.push_back(Tree::new(MetaTile {
+
+    let t_0 = t.add_node(MetaTile {
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [0.5, HR3]]),
         shape: TileType::THat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
+    });
+    t.add_edge(t_root, t_0, ());
 
     t
 }
@@ -141,20 +156,21 @@ const P_OUTLINE: &[Vec2] = &[
     Vec2::new(-1.0, 2.0 * HR3),
 ];
 
-fn p_init() -> Tree<MetaTile> {
-    let mut p = Tree::new(MetaTile {
+fn p_init() -> Tree {
+    let mut p = Tree::new();
+    let p_root = p.add_node(MetaTile {
         transform: Affine2::IDENTITY,
         shape: TileType::P,
         width: 2,
         outline: P_OUTLINE.to_vec(),
     });
-    p.push_back(Tree::new(MetaTile {
+    let p_0 = p.add_node(MetaTile {
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [1.5, HR3]]),
         shape: TileType::PHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
-    p.push_back(Tree::new(MetaTile {
+    });
+    let p_1 = p.add_node(MetaTile {
         transform: Affine2::from_cols_array_2d(&[
             [0.25, -0.5 * HR3],
             [0.5 * HR3, 0.25],
@@ -163,7 +179,9 @@ fn p_init() -> Tree<MetaTile> {
         shape: TileType::PHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
+    });
+    p.add_edge(p_root, p_0, ());
+    p.add_edge(p_root, p_1, ());
 
     p
 }
@@ -176,20 +194,21 @@ const F_OUTLINE: &[Vec2] = &[
     Vec2::new(-1.0, 2.0 * HR3),
 ];
 
-fn f_init() -> Tree<MetaTile> {
-    let mut f = Tree::new(MetaTile {
+fn f_init() -> Tree {
+    let mut f = Tree::new();
+    let f_root = f.add_node(MetaTile {
         transform: Affine2::IDENTITY,
         shape: TileType::F,
         width: 2,
         outline: F_OUTLINE.to_vec(),
     });
-    f.push_back(Tree::new(MetaTile {
+    let f_0 = f.add_node(MetaTile {
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [1.5, HR3]]),
         shape: TileType::FHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
-    f.push_back(Tree::new(MetaTile {
+    });
+    let f_1 = f.add_node(MetaTile {
         transform: Affine2::from_cols_array_2d(&[
             [0.25, -0.5 * HR3],
             [0.5 * HR3, 0.25],
@@ -198,7 +217,10 @@ fn f_init() -> Tree<MetaTile> {
         shape: TileType::FHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
-    }));
+    });
+
+    f.add_edge(f_root, f_0, ());
+    f.add_edge(f_root, f_1, ());
 
     f
 }
@@ -227,10 +249,14 @@ struct HatPolys {
     p: HatPoints,
 }
 
-fn make_polygons(polys: &mut HatPolys, t: Affine2, node: trees::Tree<MetaTile>) {
-    let nd = node.data();
-    for child in node.iter() {
-        make_polygons(polys, t.mul(nd.transform), child.deep_clone());
+fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &Tree, index: NodeIndex) {
+    let nd = tree[index];
+    // let mut bfs = Bfs::new(&tree, 0.into());
+    // while let Some(nx) = bfs.next(&tree) {
+    //     todo!()
+    // }
+    for child in tree.neighbors(index) {
+        make_polygons(polys, t.mul(nd.transform), tree, child)
     }
 
     // if is_hat(nd.shape) {
@@ -301,7 +327,8 @@ fn setup(
     make_polygons(
         &mut polys,
         Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
-        which_meta_tile,
+        &which_meta_tile,
+        0.into(),
     );
     std::process::exit(0);
 
@@ -347,32 +374,32 @@ fn setup(
     }
 }
 
-fn draw_tree(
-    commands: &mut Commands,
-    // ass: &Res<AssetServer>,
-    t: Affine2,
-    node: trees::Tree<MetaTile>,
-    mut z: f32,
-) -> f32 {
-    for child in node.iter() {
-        let tc = node.data().transform;
-        z = draw_tree(commands, t.mul(tc), child.deep_clone(), z);
-        z += 0.00001;
+// fn draw_tree(
+//     commands: &mut Commands,
+//     // ass: &Res<AssetServer>,
+//     t: Affine2,
+//     node: Tree,
+//     mut z: f32,
+// ) -> f32 {
+//     for child in node.iter() {
+//         let tc = node.data().transform;
+//         z = draw_tree(commands, t.mul(tc), child.deep_clone(), z);
+//         z += 0.00001;
 
-        // *hat.data_mut().transform = *t.mul(ht);
-        // if i == 0 {
-        //     break;
-        // }
-    }
+//         // *hat.data_mut().transform = *t.mul(ht);
+//         // if i == 0 {
+//         //     break;
+//         // }
+//     }
 
-    let mut nn = node.data().clone();
-    nn.transform = t.mul(nn.transform);
-    //|| rand::random::<f32>() < 0.1 {
-    // if !is_hat(node.data().shape) {
-    commands.spawn(polygon_entity(nn, z));
-    // }
-    return z;
-}
+//     let mut nn = node.data().clone();
+//     nn.transform = t.mul(nn.transform);
+//     //|| rand::random::<f32>() < 0.1 {
+//     // if !is_hat(node.data().shape) {
+//     commands.spawn(polygon_entity(nn, z));
+//     // }
+//     return z;
+// }
 
 fn main() {
     App::new()
@@ -489,34 +516,27 @@ fn shape_to_id(shape: TileType) -> usize {
     }
 }
 
-fn construct_patch(
-    h: Tree<MetaTile>,
-    t: Tree<MetaTile>,
-    p: Tree<MetaTile>,
-    f: Tree<MetaTile>,
-) -> Tree<MetaTile> {
-    let mut root = Tree::new(MetaTile::new(
-        Affine2::IDENTITY,
-        TileType::Pseudo,
-        h.data().width,
-        vec![],
-    ));
+fn construct_patch(h: Tree, t: Tree, p: Tree, f: Tree) -> Vec<Tree> {
+    // let mut root = Tree::new(MetaTile::new(
+    //     Affine2::IDENTITY,
+    //     TileType::Pseudo,
+    //     h.data().width,
+    //     vec![],
+    // ));
+    let mut root = Vec::with_capacity(30);
     let shapes = [h, t, p, f];
 
     for rule in RULES {
         // dbg!(rule);
         match rule {
             Rule::H => {
-                let mut h = shapes[0].data().clone();
-                h.transform = Affine2::IDENTITY;
-                let mut h = Tree::new(h);
-                let ch = shapes[0].clone().abandon();
-                h.append(ch);
+                let mut h = shapes[0].clone();
+                h[NodeIndex::from(0)].transform = Affine2::IDENTITY;
                 // dbg!(h.data());
-                root.push_back(h);
+                root.push(h);
             }
             Rule::Four(n_child, n_outline, shape, n_vertex) => {
-                let child = root.iter().nth(*n_child).unwrap().data();
+                let child: MetaTile = root[*n_child][NodeIndex::from(0)];
                 let poly = child.outline.clone();
                 let t = child.transform;
 
@@ -524,8 +544,7 @@ fn construct_patch(
                 let q2 = t.transform_point2(poly[*n_outline]);
 
                 let mut new_shape = shapes[shape_to_id(*shape)].clone(); //todo
-
-                let new_shape_outline = new_shape.data().outline.clone();
+                let new_shape_outline = new_shape[NodeIndex::from(0)].outline.clone();
 
                 let p1 = new_shape_outline[*n_vertex];
                 let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
@@ -533,22 +552,27 @@ fn construct_patch(
                 let new_transform = match_two(p1, q1, p2, q2);
 
                 // *(new_shape).data_mut().transform = new_transform.into();
-                let e = new_shape.data().width;
-                let c = new_shape.abandon();
-                let mut d = Tree::new(MetaTile {
-                    transform: new_transform,
-                    shape: *shape,
-                    width: e,
-                    outline: new_shape_outline,
-                });
-                d.append(c);
+                // let e = new_shape.data().width;
+                // let c = new_shape.abandon();
+                // let mut d = Tree::new(MetaTile {
+                //     transform: new_transform,
+                //     shape: *shape,
+                //     width: e,
+                //     outline: new_shape_outline,
+                // });
+                // d.append(c);
+
+                new_shape[NodeIndex::from(0)].transform = new_transform;
+                new_shape[NodeIndex::from(0)].outline = new_shape_outline;
 
                 // dbg!(d.data());
-                root.push_back(d);
+                root.push(new_shape);
             }
             Rule::Six(n_child_p, n_outline_p, n_child_q, n_outline_q, shape, n_vertex) => {
-                let child_p = root.iter().nth(*n_child_p).unwrap().data();
-                let child_q = root.iter().nth(*n_child_q).unwrap().data();
+                // let child_p = root.iter().nth(*n_child_p).unwrap().data();
+                // let child_q = root.iter().nth(*n_child_q).unwrap().data();
+                let child_p = root[*n_child_p][NodeIndex::from(0)];
+                let child_q = root[*n_child_q][NodeIndex::from(0)];
 
                 let p2 = child_q
                     .transform
@@ -558,24 +582,27 @@ fn construct_patch(
                     .transform_point2(child_p.outline[*n_outline_p]);
 
                 let mut new_shape = shapes[shape_to_id(*shape)].clone();
-                let new_shape_outline = new_shape.data().outline.clone();
+                let new_shape_outline = new_shape[NodeIndex::from(0)].outline.clone();
                 let p1 = new_shape_outline[*n_vertex];
                 let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
                 let new_transform = match_two(p1, q1, p2, q2);
                 // *(new_shape).data_mut().transform = new_transform.into();
-                let e = new_shape.data().width;
-                let c = new_shape.abandon();
+                // let e = new_shape.data().width;
+                // let c = new_shape.abandon();
 
-                let mut d = Tree::new(MetaTile {
-                    transform: new_transform,
-                    shape: *shape,
-                    width: e,
-                    outline: new_shape_outline,
-                });
-                d.append(c);
+                // let mut d = Tree::new(MetaTile {
+                //     transform: new_transform,
+                //     shape: *shape,
+                //     width: e,
+                //     outline: new_shape_outline,
+                // });
+                // d.append(c);
+
+                new_shape[NodeIndex::from(0)].transform = new_transform;
+                new_shape[NodeIndex::from(0)].outline = new_shape_outline;
 
                 // dbg!(d.data());
-                root.push_back(d);
+                root.push(new_shape);
             }
         }
     }
@@ -583,10 +610,10 @@ fn construct_patch(
 }
 
 struct AllFour {
-    h: Tree<MetaTile>,
-    t: Tree<MetaTile>,
-    p: Tree<MetaTile>,
-    f: Tree<MetaTile>,
+    h: Tree,
+    t: Tree,
+    p: Tree,
+    f: Tree,
 }
 
 fn rot_about(p: Vec2, angle: f32) -> Affine2 {
@@ -613,23 +640,24 @@ fn intersect(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2) -> Vec2 {
 //     assert_f32_near!(res, [[-1.0, 0.0], [0.0, -1.0], [2.0, 0.0]]);
 // }
 
-fn eval_meta_tile(mt: &MetaTile, i: usize) -> Vec2 {
+fn eval_meta_tile(mt: MetaTile, i: usize) -> Vec2 {
     let p = mt.outline[i];
     mt.transform.transform_point2(p)
 }
 
-fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
+fn construct_meta_tiles(patch: Vec<Tree>) -> AllFour {
     //-> AllFour {
-    let children: Vec<&trees::Node<MetaTile>> = patch.iter().collect();
-    let bps1 = eval_meta_tile(children[8].data(), 2);
-    let bps2 = eval_meta_tile(children[21].data(), 2);
+    // let patch: Vec<&trees::Node<MetaTile>> = patch.iter().collect();
+    let root = NodeIndex::from(0);
+    let bps1 = eval_meta_tile(patch[8][root], 2);
+    let bps2 = eval_meta_tile(patch[21][root], 2);
     let rbps = rot_about(bps1, (-2.0 * PI) / 3.0).transform_point2(bps2);
 
-    let p72 = eval_meta_tile(children[7].data(), 2);
-    let p252 = eval_meta_tile(children[25].data(), 2);
+    let p72 = eval_meta_tile(patch[7][root], 2);
+    let p252 = eval_meta_tile(patch[25][root], 2);
 
-    let llc = intersect(bps1, rbps, eval_meta_tile(children[6].data(), 2), p72);
-    let w = eval_meta_tile(children[6].data(), 2) - llc;
+    let llc = intersect(bps1, rbps, eval_meta_tile(patch[6][root], 2), p72);
+    let w = eval_meta_tile(patch[6][root], 2) - llc;
 
     let mut new_h_outline = vec![llc, bps1];
 
@@ -639,79 +667,84 @@ fn construct_meta_tiles(patch: Tree<MetaTile>) -> AllFour {
     // dbg!(llc);
 
     new_h_outline.push(new_h_outline[1] + w);
-    new_h_outline.push(eval_meta_tile(children[14].data(), 2));
+    new_h_outline.push(eval_meta_tile(patch[14][root], 2));
 
     let w = Affine2::from_angle(-PI / 3.0).transform_point2(w);
 
     new_h_outline.push(new_h_outline[3] - w);
-    new_h_outline.push(eval_meta_tile(children[6].data(), 2));
+    new_h_outline.push(eval_meta_tile(patch[6][root], 2));
 
-    let mut new_h = Tree::new(MetaTile {
+    let mut new_h = Tree::new();
+    let h_root = new_h.add_node(MetaTile {
         transform: Affine2::IDENTITY,
-        width: patch.data().width * 2,
+        width: patch[0][root].width * 2,
         shape: TileType::H,
-        outline: new_h_outline.clone(),
+        outline: new_h_outline,
     });
-
-    // let t = patch.data().transform;
-    // let c = patch.abandon();
-    let a: Vec<Tree<MetaTile>> = patch
-        .clone()
-        .iter_mut()
-        .map(|mut sub| sub.detach())
-        .collect();
 
     for n_child in [0, 9, 16, 27, 26, 6, 1, 8, 10, 15] {
-        new_h.push_back(a[n_child].clone())
+        let new_node = new_h.add_node(patch[n_child]);
+        new_h.add_edge(h_root, new_node, ());
     }
 
-    let new_p_outline = vec![p72, (p72 + (bps1 - llc)), bps1, llc];
-    // dbg!(&new_p_outline);
-    let mut new_p = Tree::new(MetaTile {
-        transform: Affine2::IDENTITY,
-        width: patch.data().width * 2,
-        shape: TileType::P,
-        outline: new_p_outline,
-    });
-    for n_child in [7, 2, 3, 4, 28] {
-        new_p.push_back(a[n_child].clone())
-    }
+    // let new_p_outline = vec![p72, (p72 + (bps1 - llc)), bps1, llc];
+    // let mut new_p = Tree::new();
+    // let p_root = new_p.add_node(MetaTile {
+    //     transform: Affine2::IDENTITY,
+    //     width: patch[0][0].width * 2,
+    //     shape: TileType::P,
+    //     outline: new_p_outline,
+    // });
 
-    let new_f_outline = vec![
-        bps2,
-        eval_meta_tile(children[24].data(), 2),
-        eval_meta_tile(children[25].data(), 0),
-        p252,
-        (p252 + (llc - bps1)),
-    ];
-    let mut new_f = Tree::new(MetaTile {
-        transform: Affine2::IDENTITY,
-        width: patch.data().width * 2,
-        shape: TileType::F,
-        outline: new_f_outline,
-    });
-    for n_child in [21, 20, 22, 23, 24, 25] {
-        new_f.push_back(a[n_child].clone())
-    }
+    // for n_child in [7, 2, 3, 4, 28] {
+    //     let new_node = new_p.add_node(patch[n_child]);
+    //     new_p.add_edge(p_root, new_node, ());
+    // }
 
-    let aaa = new_h_outline[2];
-    let bbb = (new_h_outline[1] + (new_h_outline[4] - new_h_outline[5]));
-    let ccc = rot_about(bbb, -PI / 3.0).transform_point2(aaa);
-    let new_t_outline = vec![bbb, ccc, aaa];
-    let mut new_t = Tree::new(MetaTile {
-        transform: Affine2::IDENTITY,
-        width: patch.data().width * 2,
-        shape: TileType::T,
-        outline: new_t_outline,
-    });
-    new_t.push_back(a[11].clone());
+    // let new_f_outline = vec![
+    //     bps2,
+    //     eval_meta_tile(patch[24][0], 2),
+    //     eval_meta_tile(patch[25][0], 0),
+    //     p252,
+    //     (p252 + (llc - bps1)),
+    // ];
 
-    AllFour {
-        h: new_h,
-        t: new_t,
-        p: new_p,
-        f: new_f,
-    }
+    // let mut new_f = Tree::new();
+    // let f_root = new_f.add_node(MetaTile {
+    //     transform: Affine2::IDENTITY,
+    //     width: patch[0][0].width * 2,
+    //     shape: TileType::F,
+    //     outline: new_f_outline,
+    // });
+
+    // for n_child in [21, 20, 22, 23, 24, 25] {
+    //     let new_node = new_p.add_node(patch[n_child]);
+    //     new_p.add_edge(p_root, new_node, ());
+    // }
+
+    // let aaa = new_h_outline[2];
+    // let bbb = (new_h_outline[1] + (new_h_outline[4] - new_h_outline[5]));
+    // let ccc = rot_about(bbb, -PI / 3.0).transform_point2(aaa);
+    // let new_t_outline = vec![bbb, ccc, aaa];
+
+    // let mut new_t = Tree::new();
+    // let t_root = new_t.add_node(MetaTile {
+    //     transform: Affine2::IDENTITY,
+    //     width: patch[0][0].width * 2,
+    //     shape: TileType::T,
+    //     outline: new_t_outline,
+    // });
+
+    // let t_0 = new_t.add_node(patch[11]);
+    // new_t.add_edge(t_root, t_0, ());
+
+    // AllFour {
+    //     h: new_h,
+    //     t: new_t,
+    //     p: new_p,
+    //     f: new_f,
+    // }
+    new_h
 }
 
 fn rotate_colors_playground(
