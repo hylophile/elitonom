@@ -1,4 +1,13 @@
 const LEVELS: usize = 4;
+const H_COLOR: Color = Color::WHITE;
+const H_MIRROR_COLOR: Color = Color::SEA_GREEN;
+const T_COLOR: Color = Color::TEAL;
+
+const P_COLOR: Color = Color::CRIMSON;
+const F_COLOR: Color = Color::GOLD;
+// static STROKE_COLOR: Color = Color::rgba(1.0, 1.0, 1.0, 1.0);
+static STROKE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 1.0);
+static BG_COLOR: Color = Color::rgb(0.5, 0.5, 0.5);
 
 use bevy::{
     math::Affine2,
@@ -59,14 +68,6 @@ const HAT_OUTLINE: &[Vec2] = &[
 
 // const P_COLOR: Color = Color::BLACK;
 // const F_COLOR: Color = Color::WHITE;
-const H_COLOR: Color = Color::WHITE;
-const H_MIRROR_COLOR: Color = Color::SEA_GREEN;
-const T_COLOR: Color = Color::TEAL;
-
-const P_COLOR: Color = Color::CRIMSON;
-const F_COLOR: Color = Color::GOLD;
-const STROKE_COLOR: Color = Color::BLACK;
-
 const H_OUTLINE: &[Vec2] = &[
     Vec2::new(0.0, 0.0),
     Vec2::new(4.0, 0.0),
@@ -316,7 +317,8 @@ fn setup(
         let patch = construct_patch(a.h, a.t, a.p, a.f);
         a = construct_meta_tiles(patch);
     }
-    let cap = 13_usize.pow(LEVELS.try_into().unwrap());
+    // let cap = 13_usize.pow(LEVELS.try_into().unwrap());
+    let cap = 200_000;
     let which_meta_tile = a.h;
 
     // _ = draw_tree(&mut commands, Affine2::IDENTITY, which_meta_tile, 0.0);
@@ -353,28 +355,31 @@ fn setup(
             TileType::FHat => &polys.f,
             _ => panic!(),
         };
-        let mut g = GeometryBuilder::new();
-        for tile in polys {
-            g = g.add(tile);
+        for chunk in polys.chunks(50_000) {
+            let mut g = GeometryBuilder::new();
+            for tile in chunk {
+                g = g.add(tile);
+            }
+
+            // std::process::exit(0);
+
+            commands.spawn((
+                ShapeBundle {
+                    path: g.build(),
+                    transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
+                    ..default()
+                },
+                Fill::color(shape_to_fill_color(*shape)),
+                Stroke::new(
+                    STROKE_COLOR,
+                    // 0.10 * (tile.width as f32), //.sqrt(),
+                    // 0.15,
+                    0.5,
+                ),
+            ));
         }
-
-        // std::process::exit(0);
-
-        commands.spawn((
-            ShapeBundle {
-                path: g.build(),
-                transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
-                ..default()
-            },
-            Fill::color(shape_to_fill_color(*shape)),
-            Stroke::new(
-                Color::rgba(0.0, 0.0, 0.0, 1.0),
-                // 0.10 * (tile.width as f32), //.sqrt(),
-                // 0.15,
-                0.5,
-            ),
-        ));
     }
+    // std::process::exit(0);
 }
 
 // fn draw_tree(
@@ -410,8 +415,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(PanCamPlugin::default())
         .add_plugin(ShapePlugin)
-        .add_plugin(WorldInspectorPlugin::new())
-        .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        // .add_plugin(WorldInspectorPlugin::new())
+        // .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+        .insert_resource(ClearColor(BG_COLOR))
         .add_startup_system(setup)
         // .add_system(rotate_colors_playground.in_schedule(CoreSchedule::FixedUpdate))
         // .add_system(rotate_colors_playground)
@@ -692,80 +698,73 @@ fn construct_meta_tiles(patch: Vec<Rc<MetaTile>>) -> AllFour {
         transform: Affine2::IDENTITY,
         width: patch[0].width * 2,
         shape: TileType::H,
-        outline: new_h_outline,
+        outline: new_h_outline.clone(),
     };
 
     for n_child in [0, 9, 16, 27, 26, 6, 1, 8, 10, 15] {
         new_h.push_rc(patch[n_child].clone());
-        // let new_node = new_h.add_node(patch[n_child]);
-        // new_h.add_edge(h_root, new_node, ());
     }
 
-    // let new_p_outline = vec![p72, (p72 + (bps1 - llc)), bps1, llc];
-    // let mut new_p = MetaTile::new();
-    // let p_root = new_p.add_node(MetaTile {
-    //     transform: Affine2::IDENTITY,
-    //     width: patch[0][0].width * 2,
-    //     shape: TileType::P,
-    //     outline: new_p_outline,
-    // });
+    let new_p_outline = vec![p72, (p72 + (bps1 - llc)), bps1, llc];
+    let mut new_p = MetaTile {
+        children: Vec::new(),
+        transform: Affine2::IDENTITY,
+        width: patch[0].width * 2,
+        shape: TileType::P,
+        outline: new_p_outline,
+    };
 
-    // for n_child in [7, 2, 3, 4, 28] {
-    //     let new_node = new_p.add_node(patch[n_child]);
-    //     new_p.add_edge(p_root, new_node, ());
+    for n_child in [7, 2, 3, 4, 28] {
+        new_p.push_rc(patch[n_child].clone());
+    }
+
+    let new_f_outline = vec![
+        bps2,
+        eval_meta_tile(&patch[24], 2),
+        eval_meta_tile(&patch[25], 0),
+        p252,
+        (p252 + (llc - bps1)),
+    ];
+
+    let mut new_f = MetaTile {
+        children: Vec::new(),
+        transform: Affine2::IDENTITY,
+        width: patch[0].width * 2,
+        shape: TileType::F,
+        outline: new_f_outline,
+    };
+
+    for n_child in [21, 20, 22, 23, 24, 25] {
+        new_f.push_rc(patch[n_child].clone());
+    }
+
+    let aaa = new_h_outline[2];
+    let bbb = (new_h_outline[1] + (new_h_outline[4] - new_h_outline[5]));
+    let ccc = rot_about(bbb, -PI / 3.0).transform_point2(aaa);
+    let new_t_outline = vec![bbb, ccc, aaa];
+
+    let mut new_t = MetaTile {
+        children: Vec::new(),
+        transform: Affine2::IDENTITY,
+        width: patch[0].width * 2,
+        shape: TileType::T,
+        outline: new_t_outline,
+    };
+
+    new_t.push_rc(patch[11].clone());
+    // AllFour {
+    //     h: new_h.clone(),
+    //     t: new_h.clone(),
+    //     p: new_h.clone(),
+    //     f: new_h.clone(),
     // }
-
-    // let new_f_outline = vec![
-    //     bps2,
-    //     eval_meta_tile(patch[24][0], 2),
-    //     eval_meta_tile(patch[25][0], 0),
-    //     p252,
-    //     (p252 + (llc - bps1)),
-    // ];
-
-    // let mut new_f = MetaTile::new();
-    // let f_root = new_f.add_node(MetaTile {
-    //     transform: Affine2::IDENTITY,
-    //     width: patch[0][0].width * 2,
-    //     shape: TileType::F,
-    //     outline: new_f_outline,
-    // });
-
-    // for n_child in [21, 20, 22, 23, 24, 25] {
-    //     let new_node = new_p.add_node(patch[n_child]);
-    //     new_p.add_edge(p_root, new_node, ());
-    // }
-
-    // let aaa = new_h_outline[2];
-    // let bbb = (new_h_outline[1] + (new_h_outline[4] - new_h_outline[5]));
-    // let ccc = rot_about(bbb, -PI / 3.0).transform_point2(aaa);
-    // let new_t_outline = vec![bbb, ccc, aaa];
-
-    // let mut new_t = MetaTile::new();
-    // let t_root = new_t.add_node(MetaTile {
-    //     transform: Affine2::IDENTITY,
-    //     width: patch[0][0].width * 2,
-    //     shape: TileType::T,
-    //     outline: new_t_outline,
-    // });
-
-    // let t_0 = new_t.add_node(patch[11]);
-    // new_t.add_edge(t_root, t_0, ());
 
     AllFour {
-        h: new_h.clone(),
-        t: new_h.clone(),
-        p: new_h.clone(),
-        f: new_h.clone(),
+        h: new_h,
+        t: new_t,
+        p: new_p,
+        f: new_f,
     }
-
-    // AllFour {
-    //     h: new_h,
-    //     t: new_t,
-    //     p: new_p,
-    //     f: new_f,
-    // }
-    // new_h
 }
 
 fn rotate_colors_playground(
