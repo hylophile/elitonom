@@ -9,6 +9,11 @@ const F_COLOR: Color = Color::GOLD;
 static STROKE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 1.0);
 static BG_COLOR: Color = Color::rgb(0.5, 0.5, 0.5);
 
+const STROKE_WIDTH: f32 = 0.5;
+
+const SQ3: f32 = 1.732_050_8; // sqrt(3)
+const HR3: f32 = 0.866_025_4; // sqrt(3) / 2
+
 use bevy::{
     math::Affine2,
     prelude::*,
@@ -17,27 +22,11 @@ use bevy::{
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use std::{f32::consts::PI, ops::Mul, rc::Rc};
-const SQ3: f32 = 1.732_050_8; // sqrt(3)
-const HR3: f32 = 0.866_025_4; // sqrt(3) / 2
 use rand::prelude::*;
+use std::{f32::consts::PI, ops::Mul, rc::Rc};
 
-fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
-    Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
-}
-
-#[test]
-fn ms2() {
-    let p = Vec2 { x: 1.73, y: -0.21 };
-    let q = Vec2 { x: 1.73, y: 0.21 };
-    let res = match_segment(p, q);
-    println!("{}", res);
-    assert_eq!(1, 0);
-}
-
-fn match_two(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2) -> Affine2 {
-    match_segment(p2, q2).mul(match_segment(p1, q1).inverse())
-}
+mod utils;
+use utils::*;
 
 const HAT_OUTLINE: &[Vec2] = &[
     Vec2::new(0.0, 0.0),
@@ -55,12 +44,6 @@ const HAT_OUTLINE: &[Vec2] = &[
     Vec2::new(0.0, SQ3),
 ];
 
-// const H_COLOR: Color = Color::BLACK;
-// const H_MIRROR_COLOR: Color = Color::BLACK;
-// const T_COLOR: Color = Color::BLACK;
-
-// const P_COLOR: Color = Color::BLACK;
-// const F_COLOR: Color = Color::WHITE;
 const H_OUTLINE: &[Vec2] = &[
     Vec2::new(0.0, 0.0),
     Vec2::new(4.0, 0.0),
@@ -231,7 +214,6 @@ fn is_hat(s: TileType) -> bool {
         TileType::THat => true,
         TileType::PHat => true,
         TileType::FHat => true,
-        TileType::Pseudo => true,
     }
 }
 
@@ -246,15 +228,10 @@ struct HatPolys {
 }
 
 fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
-    // let mut bfs = Bfs::new(&tree, 0.into());
-    // while let Some(nx) = bfs.next(&tree) {
-    //     todo!()
-    // }
     for child in tree.children.clone() {
         make_polygons(polys, t.mul(tree.transform), &child)
     }
 
-    // if is_hat(nd.shape) {
     let tt = t.mul(tree.transform);
     let points = tree
         .outline
@@ -275,11 +252,6 @@ fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
             let level = (tree.width as f32).log2() as usize;
             polys.meta[level].push(poly);
         }
-        // TileType::H => todo!(),
-        // TileType::T => todo!(),
-        // TileType::P => todo!(),
-        // TileType::F => todo!(),
-        // TileType::Pseudo => todo!(),
     }
 }
 
@@ -318,8 +290,6 @@ fn setup(
     let cap = 200_000;
     let which_meta_tile = a.h;
 
-    // _ = draw_tree(&mut commands, Affine2::IDENTITY, which_meta_tile, 0.0);
-
     let mut polys = HatPolys {
         h: Vec::with_capacity(cap),
         h1: Vec::with_capacity(cap),
@@ -328,9 +298,7 @@ fn setup(
         p: Vec::with_capacity(cap),
         meta: vec![Vec::new(); LEVELS + 2],
     };
-    // for i in 0..LEVELS {
-    //     // polys.meta[i] = Vec::new();
-    // }
+
     make_polygons(
         &mut polys,
         Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
@@ -371,12 +339,7 @@ fn setup(
                     ..default()
                 },
                 Fill::color(shape_to_fill_color(*shape)),
-                Stroke::new(
-                    STROKE_COLOR,
-                    // 0.10 * (tile.width as f32), //.sqrt(),
-                    // 0.15,
-                    0.5,
-                ),
+                Stroke::new(STROKE_COLOR, STROKE_WIDTH),
             ));
         }
     }
@@ -395,43 +358,11 @@ fn setup(
                 transform: Transform::from_xyz(0.0, 0.0, 1.0),
                 ..default()
             },
-            Stroke::new(
-                STROKE_COLOR,
-                // 0.10 * (tile.width as f32), //.sqrt(),
-                // 0.15,
-                0.5 * 2.0_f32.powi(i as i32),
-            ),
+            Stroke::new(STROKE_COLOR, STROKE_WIDTH * 2.0_f32.powi(i as i32)),
         ));
     }
     // std::process::exit(0);
 }
-
-// fn draw_tree(
-//     commands: &mut Commands,
-//     // ass: &Res<AssetServer>,
-//     t: Affine2,
-//     node: MetaTile,
-//     mut z: f32,
-// ) -> f32 {
-//     for child in node.iter() {
-//         let tc = node.data().transform;
-//         z = draw_tree(commands, t.mul(tc), child.deep_clone(), z);
-//         z += 0.00001;
-
-//         // *hat.data_mut().transform = *t.mul(ht);
-//         // if i == 0 {
-//         //     break;
-//         // }
-//     }
-
-//     let mut nn = node.data().clone();
-//     nn.transform = t.mul(nn.transform);
-//     //|| rand::random::<f32>() < 0.1 {
-//     // if !is_hat(node.data().shape) {
-//     commands.spawn(polygon_entity(nn, z));
-//     // }
-//     return z;
-// }
 
 fn main() {
     App::new()
@@ -440,12 +371,8 @@ fn main() {
         .add_plugin(PanCamPlugin::default())
         .add_plugin(ShapePlugin)
         // .add_plugin(WorldInspectorPlugin::new())
-        // .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
         .insert_resource(ClearColor(BG_COLOR))
         .add_startup_system(setup)
-        // .add_system(rotate_colors_playground.in_schedule(CoreSchedule::FixedUpdate))
-        // .add_system(rotate_colors_playground)
-        .insert_resource(FixedTime::new_from_secs(1.0 / 30.0))
         .run();
 }
 
@@ -469,7 +396,6 @@ enum TileType {
     THat,
     PHat,
     FHat,
-    Pseudo,
 }
 
 #[derive(Debug)]
@@ -659,39 +585,12 @@ struct AllFour {
     f: MetaTile,
 }
 
-fn rot_about(p: Vec2, angle: f32) -> Affine2 {
-    Affine2::from_translation(p).mul(Affine2::from_angle(angle).mul(Affine2::from_translation(-p)))
-}
-
-fn intersect(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2) -> Vec2 {
-    let d = (q2.y - p2.y) * (q1.x - p1.x) - (q2.x - p2.x) * (q1.y - p1.y);
-    let u_a = ((q2.x - p2.x) * (p1.y - p2.y) - (q2.y - p2.y) * (p1.x - p2.x)) / d;
-    // const uB =
-    //   ((q1.x - p1.x) * (p1.y - p2.y) - (q1.y - p1.y) * (p1.x - p2.x)) / d;
-
-    return Vec2 {
-        x: p1.x + u_a * (q1.x - p1.x),
-        y: p1.y + u_a * (q1.y - p1.y),
-    };
-}
-
-// #[test]
-// fn test_rot() {
-//     let p = Vec2::new(1.0, 0.0);
-//     let res = rot_about(p, PI);
-//     println!("{res}");
-//     assert_f32_near!(res, [[-1.0, 0.0], [0.0, -1.0], [2.0, 0.0]]);
-// }
-
 fn eval_meta_tile(mt: &MetaTile, i: usize) -> Vec2 {
     let p = mt.outline[i];
     mt.transform.transform_point2(p)
 }
 
 fn construct_meta_tiles(patch: Vec<Rc<MetaTile>>) -> AllFour {
-    //-> AllFour {
-    // let patch: Vec<&trees::Node<MetaTile>> = patch.iter().collect();
-    // let root = NodeIndex::from(0);
     let bps1 = eval_meta_tile(&patch[8], 2);
     let bps2 = eval_meta_tile(&patch[21], 2);
     let rbps = rot_about(bps1, (-2.0 * PI) / 3.0).transform_point2(bps2);
@@ -776,60 +675,12 @@ fn construct_meta_tiles(patch: Vec<Rc<MetaTile>>) -> AllFour {
     };
 
     new_t.push_rc(patch[11].clone());
-    // AllFour {
-    //     h: new_h.clone(),
-    //     t: new_h.clone(),
-    //     p: new_h.clone(),
-    //     f: new_h.clone(),
-    // }
 
     AllFour {
         h: new_h,
         t: new_t,
         p: new_p,
         f: new_f,
-    }
-}
-
-fn rotate_colors_playground(
-    mut query: Query<(&mut Fill, &mut TileType, &mut Transform)>,
-    time: Res<Time>,
-) {
-    // let mut c = query.;
-    // *c = Fill::color(Color::rgba(1.0, 1.0, 1.0, 0.1));
-    for (mut fill, shape, mut transform) in query.iter_mut() {
-        // if fill.color.r() > 0.9 || fill.color.g() > 0.9 || fill.color.b() > 0.9 {
-        //     fill.color = Color::rgba(
-        //         fill.color.r() - 0.01,
-        //         fill.color.g() - 0.01,
-        //         fill.color.b() - 0.01,
-        //         1.0,
-        //     );
-        // } else if fill.color.r() < 0.1 || fill.color.g() < 0.1 || fill.color.b() < 0.1 {
-        //     fill.color = fill.color + Color::rgba(0.01, 0.01, 0.01, 0.0);
-        // }
-        // let a = (((time.elapsed_seconds() * 100.0) as usize) % 100) as f32;
-        // let a = a / 100.0;
-        // transform.rotate_z(0.125_f32.to_radians());
-        let tt = transform.translation / 2.0;
-        transform.rotate_around(tt * -1.0, Quat::from_rotation_z((1.0_f32).to_radians()));
-        let a = time.elapsed_seconds();
-        let b = shape_to_fill_color(*shape);
-        let c = Color::rgba(
-            b.r() * (a.sin() + 1.0),
-            b.g() * (a.cos() + 1.0),
-            b.b() * ((a + PI).cos() + 1.0),
-            1.0 * b.a(),
-        );
-        // let a = Color::rgba(
-        //     (b.r() * a.sin()).abs(),
-        //     (b.g() * a.sin()).abs(),
-        //     (b.b() * a.sin()).abs(),
-        //     1.0 * b.a(),
-        // );
-        // fill.color = Color::rgba(a.sin(), a.cos(), a.tan(), 1.0)
-        // fill.color = Color::rgba(a, a, a, 1.0);
-        fill.color = c;
     }
 }
 
@@ -849,51 +700,4 @@ fn shape_to_fill_color(shape: TileType) -> Color {
         _ => Color::rgba(1.0, 1.0, 1.0, 0.0),
         // _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
     }
-}
-
-type TileEntity = (ShapeBundle, Fill, Stroke, TileType);
-// type TileEntity = (SpriteBundle, TileType);
-
-fn polygon_entity(tile: MetaTile, z: f32) -> TileEntity {
-    let polygon = shapes::Polygon {
-        // points: Vec::from(HAT_OUTLINE),
-        points: tile
-            .outline
-            .iter()
-            .map(|p| tile.transform.transform_point2(*p))
-            .collect(),
-        closed: true,
-    };
-
-    // return (
-    //     SpriteBundle {
-    //         texture: asset_server.load("hat-monotile.png"), // nope, performance is worse
-    //         ..default()
-    //     },
-    //     tile.shape,
-    // );
-    (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&polygon),
-            // transform: Transform::from_matrix(mat4_from_affine2(tile.transform, z)),
-            ..default()
-        },
-        Fill::color(shape_to_fill_color(tile.shape)),
-        Stroke::new(
-            Color::rgba(0.0, 0.0, 0.0, 1.0),
-            // 0.10 * (tile.width as f32), //.sqrt(),
-            // 0.15,
-            0.10 * (tile.width as f32).sqrt(),
-        ),
-        tile.shape,
-    )
-}
-
-fn mat4_from_affine2(affine2: Affine2, z: f32) -> Mat4 {
-    Mat4::from_cols(
-        Vec4::new(affine2.matrix2.x_axis.x, affine2.matrix2.x_axis.y, 0.0, 0.0),
-        Vec4::new(affine2.matrix2.y_axis.x, affine2.matrix2.y_axis.y, 0.0, 0.0),
-        Vec4::Z,
-        Vec4::new(affine2.translation.x, affine2.translation.y, z, 1.0),
-    )
 }
