@@ -271,15 +271,11 @@ fn setup(
         })
         .insert(bevy_pancam::PanCam::default());
 
-    let h = h_init();
-    let t = t_init();
-    let p = p_init();
-    let f = f_init();
     let mut a = AllFour {
-        h: h.clone(),
-        t: t.clone(),
-        p: p.clone(),
-        f: f.clone(),
+        h: h_init(),
+        t: t_init(),
+        p: p_init(),
+        f: f_init(),
     };
 
     for _ in 0..LEVELS {
@@ -450,8 +446,8 @@ impl fmt::Display for MetaTile {
     // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "--\n{:?}\n", self.shape)?;
-        write!(f, "{:?}\n", self.transform)?;
-        write!(f, "{:?}\n", self.outline)?;
+        writeln!(f, "{:?}", self.transform)?;
+        writeln!(f, "{:?}", self.outline)?;
         write!(f, "{:?}\n---", self.width)
     }
 }
@@ -662,7 +658,7 @@ fn construct_meta_tiles(patch: Vec<Rc<MetaTile>>) -> AllFour {
     }
 
     let aaa = new_h_outline[2];
-    let bbb = (new_h_outline[1] + (new_h_outline[4] - new_h_outline[5]));
+    let bbb = new_h_outline[1] + (new_h_outline[4] - new_h_outline[5]);
     let ccc = rot_about(bbb, -PI / 3.0).transform_point2(aaa);
     let new_t_outline = vec![bbb, ccc, aaa];
 
@@ -685,7 +681,7 @@ fn construct_meta_tiles(patch: Vec<Rc<MetaTile>>) -> AllFour {
 }
 
 fn shape_to_fill_color(shape: TileType) -> Color {
-    let tr = 0.4;
+    let _tr = 0.4;
     match shape {
         TileType::H1Hat => H_MIRROR_COLOR,
         TileType::HHat => H_COLOR,

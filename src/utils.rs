@@ -36,8 +36,8 @@ pub fn intersect(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2) -> Vec2 {
     // const uB =
     //   ((q1.x - p1.x) * (p1.y - p2.y) - (q1.y - p1.y) * (p1.x - p2.x)) / d;
 
-    return Vec2 {
+    Vec2 {
         x: p1.x + u_a * (q1.x - p1.x),
         y: p1.y + u_a * (q1.y - p1.y),
-    };
+    }
 }
