@@ -1,4 +1,4 @@
-const LEVELS: usize = 4;
+const LEVELS: usize = 6;
 const H_COLOR: Color = Color::WHITE;
 const H_MIRROR_COLOR: Color = Color::SEA_GREEN;
 const T_COLOR: Color = Color::TEAL;
@@ -17,20 +17,13 @@ use bevy::{
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use petgraph::{visit::Bfs, Graph};
 use std::{f32::consts::PI, ops::Mul, rc::Rc};
-// use trees::MetaTile;
-// type MetaTile = Graph<MetaTile, (), petgraph::Directed>;
-// const SCALE: f32 = 10.0;
-//
-const SQ3: f32 = 1.732_050_8;
-const HR3: f32 = 0.866_025_4;
+const SQ3: f32 = 1.732_050_8; // sqrt(3)
+const HR3: f32 = 0.866_025_4; // sqrt(3) / 2
 use rand::prelude::*;
 
-use petgraph::graph::NodeIndex;
 fn match_segment(p: Vec2, q: Vec2) -> Affine2 {
     Affine2::from_cols_array_2d(&[[q.x - p.x, q.y - p.y], [p.y - q.y, q.x - p.x], [p.x, p.y]])
-    // let mut tree :  = Graph::new();
 }
 
 #[test]
@@ -249,6 +242,7 @@ struct HatPolys {
     t: HatPoints,
     f: HatPoints,
     p: HatPoints,
+    meta: Vec<Vec<shapes::Polygon>>,
 }
 
 fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
@@ -277,7 +271,10 @@ fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
         TileType::THat => polys.t.push(poly),
         TileType::PHat => polys.p.push(poly),
         TileType::FHat => polys.f.push(poly),
-        _ => (),
+        _ => {
+            let level = (tree.width as f32).log2() as usize;
+            polys.meta[level].push(poly);
+        }
         // TileType::H => todo!(),
         // TileType::T => todo!(),
         // TileType::P => todo!(),
@@ -329,7 +326,11 @@ fn setup(
         t: Vec::with_capacity(cap),
         f: Vec::with_capacity(cap),
         p: Vec::with_capacity(cap),
+        meta: vec![Vec::new(); LEVELS + 2],
     };
+    // for i in 0..LEVELS {
+    //     // polys.meta[i] = Vec::new();
+    // }
     make_polygons(
         &mut polys,
         Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
@@ -378,6 +379,29 @@ fn setup(
                 ),
             ));
         }
+    }
+
+    for (i, outlines) in polys.meta.iter().enumerate() {
+        let mut g = GeometryBuilder::new();
+        for outline in outlines {
+            g = g.add(outline);
+        }
+
+        // std::process::exit(0);
+
+        commands.spawn((
+            ShapeBundle {
+                path: g.build(),
+                transform: Transform::from_xyz(0.0, 0.0, 1.0),
+                ..default()
+            },
+            Stroke::new(
+                STROKE_COLOR,
+                // 0.10 * (tile.width as f32), //.sqrt(),
+                // 0.15,
+                0.5 * 2.0_f32.powi(i as i32),
+            ),
+        ));
     }
     // std::process::exit(0);
 }
