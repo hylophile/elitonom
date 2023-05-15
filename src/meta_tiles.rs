@@ -59,7 +59,7 @@ impl MetaTile {
     }
 }
 
-const HAT_OUTLINE: &[Vec2] = &[
+pub const HAT_OUTLINE: &[Vec2] = &[
     Vec2::new(0.0, 0.0),
     Vec2::new(-1.5, -0.5 * SQ3),
     Vec2::new(-1.0, -SQ3),
