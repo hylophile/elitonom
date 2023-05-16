@@ -11,7 +11,7 @@ fn ms2() {
     let p = Vec2 { x: 1.73, y: -0.21 };
     let q = Vec2 { x: 1.73, y: 0.21 };
     let res = match_segment(p, q);
-    println!("{}", res);
+    println!("{res}");
     assert_eq!(1, 0);
 }
 

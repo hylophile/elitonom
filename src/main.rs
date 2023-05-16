@@ -1,22 +1,21 @@
 use bevy::{
-    math::Affine2,
     prelude::*,
-    sprite::MaterialMesh2dBundle,
     // sprite::MaterialMesh2dBundle,
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
 use constants::BG_COLOR;
-use rand::prelude::*;
-use std::{f32::consts::PI, ops::Mul, sync::Arc};
+
+
 
 mod constants;
 mod life;
 mod meta_tiles;
 mod tree;
 mod utils;
-use tree::{construct_meta_tiles, construct_patch, AllFour, TreePlugin};
+use tree::{TreePlugin};
 
 fn setup(
     mut commands: Commands,

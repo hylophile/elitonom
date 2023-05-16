@@ -13,7 +13,7 @@ use crate::{
 fn touching(a: Affine2, b: Affine2) -> bool {
     let eps = 0.0001;
     let pa = HAT_OUTLINE.iter().map(|p| a.transform_point2(*p));
-    let mut pb = HAT_OUTLINE.iter().map(|p| b.transform_point2(*p));
+    let pb = HAT_OUTLINE.iter().map(|p| b.transform_point2(*p));
     for p in pa {
         let t = pb
             .clone()
@@ -24,13 +24,13 @@ fn touching(a: Affine2, b: Affine2) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
 fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &MetaTile) {
     let new_transform = t.mul(tree.transform);
     for child in &tree.children {
-        make_affines(affines, new_transform, &child)
+        make_affines(affines, new_transform, child)
     }
 
     match tree.shape {
@@ -63,7 +63,7 @@ fn n(mut commands: Commands, mtt: Res<MetaTileTree>) {
     let n = 20;
     let mut ns: Vec<Affine2> = Vec::with_capacity(n);
 
-    let t: Vec<_> = kdtree
+    let _t: Vec<_> = kdtree
         .nearest_n(&[0.0, 0.0], n, &squared_euclidean)
         .into_iter()
         .collect();
@@ -73,16 +73,16 @@ fn n(mut commands: Commands, mtt: Res<MetaTileTree>) {
     // let c = touching(a, b);
     // dbg!(c);
     let oa = affines[100];
-    let origin = HAT_OUTLINE.iter().map(|p| oa.transform_point2(*p));
+    let _origin = HAT_OUTLINE.iter().map(|p| oa.transform_point2(*p));
 
-    let x = kdtree
-        .nearest_n(&oa.translation.as_ref(), n, &squared_euclidean)
+    kdtree
+        .nearest_n(oa.translation.as_ref(), n, &squared_euclidean)
         .into_iter()
         .filter(|n| touching(oa, affines[n.item]))
         // .filter(|n| n.distance < 80.0)
         .filter(|n| n.item != 100)
         .for_each(|neighbor| {
-            ns.push(affines[neighbor.item].clone());
+            ns.push(affines[neighbor.item]);
             dbg!(neighbor.distance);
             // let af = affines[neighbor.item];
             // commands.spawn(MaterialMesh2dBundle {
@@ -97,7 +97,7 @@ fn n(mut commands: Commands, mtt: Res<MetaTileTree>) {
         });
 
     let mut g = GeometryBuilder::new();
-    for aff in ns.iter() {
+    for aff in &ns {
         let points = HAT_OUTLINE
             .iter()
             .map(|p| aff.transform_point2(*p))

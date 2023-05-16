@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, ops::Mul, sync::Arc};
 
 use crate::{
-    constants::*,
+    constants::{F_COLOR, H_COLOR, H_MIRROR_COLOR, P_COLOR, STROKE_COLOR, STROKE_WIDTH, T_COLOR},
     meta_tiles::{f_init, h_init, p_init, t_init, MetaTile, TileType},
     utils::{intersect, match_two, rot_about},
 };
@@ -376,7 +376,7 @@ struct HatPolys {
 }
 fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
     for child in &tree.children {
-        make_polygons(polys, t.mul(tree.transform), &child)
+        make_polygons(polys, t.mul(tree.transform), child)
     }
 
     let tt = t.mul(tree.transform);
