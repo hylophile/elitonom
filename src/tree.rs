@@ -261,7 +261,7 @@ pub fn construct_meta_tiles(patch: Vec<Arc<MetaTile>>) -> AllFour {
 }
 
 pub struct TreePlugin;
-const LEVELS: usize = 5;
+const LEVELS: usize = 3;
 
 #[derive(Resource)]
 pub struct MetaTileTree(pub MetaTile);
@@ -284,7 +284,6 @@ impl Plugin for TreePlugin {
 
         app.insert_resource(MetaTileTree(which_meta_tile))
             .add_startup_system(background_polygons);
-        // .add_system(greet_people);
     }
 }
 
@@ -376,7 +375,7 @@ struct HatPolys {
 }
 fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
     for child in &tree.children {
-        make_polygons(polys, t.mul(tree.transform), child)
+        make_polygons(polys, t.mul(tree.transform), child);
     }
 
     let tt = t.mul(tree.transform);

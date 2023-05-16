@@ -1,21 +1,16 @@
-use bevy::{
-    prelude::*,
-    // sprite::MaterialMesh2dBundle,
-};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy::prelude::*;
 
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
 use constants::BG_COLOR;
-
-
 
 mod constants;
 mod life;
 mod meta_tiles;
 mod tree;
 mod utils;
-use tree::{TreePlugin};
+use life::LifePlugin;
+use tree::TreePlugin;
 
 fn setup(
     mut commands: Commands,
@@ -45,5 +40,6 @@ fn main() {
         .add_system(bevy::window::close_on_esc)
         .add_startup_system(setup)
         .add_plugin(TreePlugin)
+        .add_plugin(LifePlugin)
         .run();
 }
