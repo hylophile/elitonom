@@ -32,7 +32,7 @@ pub fn h_init() -> MetaTile {
         children: Vec::new(),
     };
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[5], H_OUTLINE[0]),
         shape: TileType::HHat,
@@ -40,7 +40,7 @@ pub fn h_init() -> MetaTile {
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[9], HAT_OUTLINE[11], H_OUTLINE[1], H_OUTLINE[2]),
         shape: TileType::HHat,
@@ -48,7 +48,7 @@ pub fn h_init() -> MetaTile {
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[3], H_OUTLINE[4]),
         shape: TileType::HHat,
@@ -56,7 +56,7 @@ pub fn h_init() -> MetaTile {
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[
             [-0.25, 0.5 * HR3],
@@ -86,7 +86,7 @@ pub fn t_init() -> MetaTile {
         outline: T_OUTLINE.to_vec(),
     };
 
-    t.push_rc(Rc::new(MetaTile {
+    t.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [0.5, HR3]]),
         shape: TileType::THat,

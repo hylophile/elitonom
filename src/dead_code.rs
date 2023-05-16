@@ -265,3 +265,17 @@ fn mat4_from_affine2(affine2: Affine2, z: f32) -> Mat4 {
 // .insert_resource(FixedTime::new_from_secs(1.0 / 30.0))
 
 // _ = draw_tree(&mut commands, Affine2::IDENTITY, which_meta_tile, 0.0);
+
+fn is_hat(s: TileType) -> bool {
+    match s {
+        TileType::H => false,
+        TileType::T => false,
+        TileType::P => false,
+        TileType::F => false,
+        TileType::H1Hat => true,
+        TileType::HHat => true,
+        TileType::THat => true,
+        TileType::PHat => true,
+        TileType::FHat => true,
+    }
+}

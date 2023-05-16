@@ -1,6 +1,6 @@
 use bevy::math::Affine2;
 use bevy::math::Vec2;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::utils::match_two;
 
@@ -26,7 +26,7 @@ pub struct MetaTile {
     pub shape: TileType,
     pub outline: Vec<Vec2>,
     pub width: usize,
-    pub children: Vec<Rc<MetaTile>>,
+    pub children: Vec<Arc<MetaTile>>,
 }
 use std::fmt;
 impl fmt::Display for MetaTile {
@@ -51,10 +51,10 @@ impl MetaTile {
     }
 
     pub fn push(self: &mut MetaTile, mt: MetaTile) {
-        self.children.push(Rc::new(mt))
+        self.children.push(Arc::new(mt))
     }
 
-    pub fn push_rc(self: &mut MetaTile, mt: Rc<MetaTile>) {
+    pub fn push_rc(self: &mut MetaTile, mt: Arc<MetaTile>) {
         self.children.push(mt)
     }
 }
@@ -93,7 +93,7 @@ pub fn h_init() -> MetaTile {
         children: Vec::new(),
     };
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[5], H_OUTLINE[0]),
         shape: TileType::HHat,
@@ -101,7 +101,7 @@ pub fn h_init() -> MetaTile {
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[9], HAT_OUTLINE[11], H_OUTLINE[1], H_OUTLINE[2]),
         shape: TileType::HHat,
@@ -109,7 +109,7 @@ pub fn h_init() -> MetaTile {
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[3], H_OUTLINE[4]),
         shape: TileType::HHat,
@@ -117,7 +117,7 @@ pub fn h_init() -> MetaTile {
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Rc::new(MetaTile {
+    h.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[
             [-0.25, 0.5 * HR3],
@@ -147,7 +147,7 @@ pub fn t_init() -> MetaTile {
         outline: T_OUTLINE.to_vec(),
     };
 
-    t.push_rc(Rc::new(MetaTile {
+    t.push_rc(Arc::new(MetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [0.5, HR3]]),
         shape: TileType::THat,
