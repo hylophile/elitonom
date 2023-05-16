@@ -21,7 +21,7 @@ use bevy::{
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_pancam::PanCamPlugin;
 use bevy_prototype_lyon::prelude::*;
-use kiddo::{distance::squared_euclidean, KdTree};
+use kiddo::{distance::squared_euclidean, float::neighbour::Neighbour, KdTree};
 use rand::prelude::*;
 use std::{f32::consts::PI, ops::Mul, rc::Rc};
 
@@ -221,24 +221,57 @@ fn setup(
         .iter()
         .enumerate()
         .for_each(|(idx, a)| kdtree.add(a.translation.as_ref(), idx));
-    let n = 10;
-    let mut ns: Vec<Affine2> = Vec::with_capacity(10);
+    let n = 20;
+    let mut ns: Vec<Affine2> = Vec::with_capacity(n);
+
+    let t: Vec<_> = kdtree
+        .nearest_n(&[0.0, 0.0], n, &squared_euclidean)
+        .into_iter()
+        .collect();
+    // let a = affines[t[0].item];
+    // let b = affines[t[1].item];
+
+    fn touching(a: Affine2, b: Affine2) -> bool {
+        let eps = 0.0001;
+        let pa = HAT_OUTLINE.iter().map(|p| a.transform_point2(*p));
+        let mut pb = HAT_OUTLINE.iter().map(|p| b.transform_point2(*p));
+        for p in pa {
+            let t = pb
+                .clone()
+                .any(|q| (p.x - q.x).abs() < eps && (p.y - q.y).abs() < eps);
+            // dbg!(p);
+            dbg!(pb.clone().map(|q| (q - p).abs()));
+            if t {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // let c = touching(a, b);
+    // dbg!(c);
+    let oa = affines[100];
+    let origin = HAT_OUTLINE.iter().map(|p| oa.transform_point2(*p));
 
     let x = kdtree
-        .nearest_n(&[20.0, 0.0], n, &squared_euclidean)
+        .nearest_n(&oa.translation.as_ref(), n, &squared_euclidean)
         .into_iter()
+        .filter(|n| touching(oa, affines[n.item]))
+        // .filter(|n| n.distance < 80.0)
+        .filter(|n| n.item != 100)
         .for_each(|neighbor| {
             ns.push(affines[neighbor.item].clone());
-            let af = affines[neighbor.item];
-            commands.spawn(MaterialMesh2dBundle {
-                mesh: _meshes.add(Mesh::from(shape::Quad::default())).into(),
-                transform: Transform::default()
-                    .with_translation(Vec3::new(af.translation.x, af.translation.y, 1.0))
-                    .with_scale(Vec3::splat(3.)),
-                material: _materials.add(ColorMaterial::from(Color::PURPLE)),
-                ..default()
-            });
-            dbg!("{}", affines[neighbor.item]);
+            dbg!(neighbor.distance);
+            // let af = affines[neighbor.item];
+            // commands.spawn(MaterialMesh2dBundle {
+            //     mesh: _meshes.add(Mesh::from(shape::Quad::default())).into(),
+            //     transform: Transform::default()
+            //         .with_translation(Vec3::new(af.translation.x, af.translation.y, 1.0))
+            //         .with_scale(Vec3::splat(3.)),
+            //     material: _materials.add(ColorMaterial::from(Color::PURPLE)),
+            //     ..default()
+            // });
+            // dbg!("{}", affines[neighbor.item]);
         });
 
     let mut g = GeometryBuilder::new();
@@ -263,7 +296,7 @@ fn setup(
             transform: Transform::from_xyz(0.0, 0.0, 1.0),
             ..default()
         },
-        Fill::color(STROKE_COLOR),
+        Fill::color(Color::rgba(0.0, 0.0, 0.0, 0.5)),
     ));
 
     // std::process::exit(0);
