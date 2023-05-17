@@ -10,6 +10,7 @@ use rand::distributions::{Distribution, Uniform};
 
 use crate::constants::CAP;
 use crate::{
+    constants::*,
     meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
     tree::MetaTileTree,
 };
@@ -22,8 +23,9 @@ struct Affines(pub Vec<Affine2>);
 
 #[derive(Debug, Resource)]
 struct LifeState {
-    old: Vec<usize>,
-    new: Vec<usize>,
+    // HashSet
+    old: Vec<bool>,
+    new: Vec<bool>,
 }
 
 impl LifeState {
@@ -95,20 +97,23 @@ fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &MetaTile) {
 
 fn init_life(mut commands: Commands, affines: Res<Affines>, mut life_state: ResMut<LifeState>) {
     let mut rng = rand::thread_rng();
-    let die = Uniform::from(1..20);
+    let die = Uniform::from(1..5);
 
-    life_state.new.clear();
+    // life_state.new.clear();
+    let mut ne = Vec::with_capacity(CAP);
 
     for idx in 0..affines.0.len() {
         let t = die.sample(&mut rng);
 
         if t == 1 {
-            life_state.new.push(idx);
+            // life_state.new.push(idx);
+            life_state.new[idx] = true;
+            ne.push(idx);
         }
     }
     // dbg!(&life_state);
 
-    spawn_idxs(commands, &affines.0, &life_state.new);
+    spawn_idxs(commands, &affines.0, &ne);
 }
 
 fn spawn_idxs(mut commands: Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>) {
@@ -134,7 +139,7 @@ fn spawn_idxs(mut commands: Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>)
             transform: Transform::from_xyz(0.0, 0.0, 1.0),
             ..default()
         },
-        Fill::color(Color::rgba(0.0, 0.0, 0.0, 0.1)),
+        Fill::color(Color::rgba(0.0, 0.0, 0.0, 1.0)),
         Cells,
     ));
 }
@@ -151,15 +156,37 @@ fn step_life(
     }
     life_state.swap();
     let mut hs: HashSet<usize> = HashSet::new();
-    for x in &life_state.old {
-        let ns = neighbors(&kdtree.0, &affines.0, *x);
+    let mut ne = Vec::with_capacity(CAP);
+    let life_state = &mut *life_state;
 
-        ns.iter().for_each(|n| {
-            let _ = hs.insert(*n);
-        });
+    for (i, x) in life_state.old.iter().enumerate() {
+        let ns = neighbors(&kdtree.0, &affines.0, i);
+        let count = ns
+            .iter()
+            .filter(|idx| life_state.old[**idx] == true)
+            .count();
+        life_state.new[i] = match x {
+            true => match count {
+                1 => true,
+                2 => true,
+                _ => false,
+            },
+            false => match count {
+                2 => true,
+                _ => false,
+            },
+        };
+        if life_state.new[i] {
+            ne.push(i);
+        }
+
+        // ns.iter().for_each(|n| {
+        //     let _ = hs.insert(*n);
+        // });
     }
-    life_state.new = hs.into_iter().collect();
-    spawn_idxs(commands, &affines.0, &life_state.new);
+    // dbg!(&ne);
+    // life_state.new = hs.into_iter().collect();
+    spawn_idxs(commands, &affines.0, &ne);
 }
 
 fn kdtree(mut commands: Commands, mtt: Res<MetaTileTree>) {
@@ -176,6 +203,13 @@ fn kdtree(mut commands: Commands, mtt: Res<MetaTileTree>) {
         .enumerate()
         .for_each(|(idx, a)| kdtree.add(a.translation.as_ref(), idx));
 
+    let mut life_state = LifeState {
+        // old: Vec::with_capacity(CAP),
+        // new: Vec::with_capacity(CAP),
+        old: vec![false; affines.len()],
+        new: vec![false; affines.len()],
+    };
+    commands.insert_resource(life_state);
     commands.insert_resource(MetaTileKdTree(kdtree));
     commands.insert_resource(Affines(affines));
 }
@@ -184,14 +218,12 @@ pub struct LifePlugin;
 
 impl Plugin for LifePlugin {
     fn build(&self, app: &mut App) {
-        let mut life_state = LifeState {
-            old: Vec::with_capacity(CAP),
-            new: Vec::with_capacity(CAP),
-        };
-
         app.add_startup_system(kdtree)
-            .insert_resource(life_state)
+            // .insert_resource(life_state)
             .add_startup_system(init_life.in_base_set(PostStartup))
             .add_system(step_life);
+        // .add_system(step_life.in_schedule(CoreSchedule::FixedUpdate))
+        // configure our fixed timestep schedule to run twice a second
+        // .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP));
     }
 }
