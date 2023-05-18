@@ -17,4 +17,4 @@ pub const STROKE_WIDTH: f32 = 0.5;
 pub const CAP: usize = 200_000;
 
 pub const FIXED_TIMESTEP: f32 = 0.5;
-pub const LEVELS: usize = 4;
+pub const LEVELS: usize = 3;

@@ -8,9 +8,11 @@ mod constants;
 mod life;
 mod meta_tiles;
 mod tree;
+mod ui;
 mod utils;
 use life::LifePlugin;
 use tree::TreePlugin;
+use ui::UIPlugin;
 
 fn setup(
     mut commands: Commands,
@@ -41,5 +43,6 @@ fn main() {
         .add_startup_system(setup)
         .add_plugin(TreePlugin)
         .add_plugin(LifePlugin)
+        .add_plugin(UIPlugin)
         .run();
 }

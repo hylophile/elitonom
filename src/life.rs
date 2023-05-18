@@ -1,10 +1,10 @@
-use std::ops::Mul;
-
 use bevy::app::StartupSet::PostStartup;
+// use bevy::ecs::schedule::ShouldRun;
 use bevy::{math::Affine2, prelude::*};
 use bevy_prototype_lyon::prelude::*;
 use kiddo::{distance::squared_euclidean, KdTree};
 use std::collections::HashSet;
+use std::ops::Mul;
 
 use rand::distributions::{Distribution, Uniform};
 
@@ -95,28 +95,40 @@ fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &MetaTile) {
     }
 }
 
-fn init_life(mut commands: Commands, affines: Res<Affines>, mut life_state: ResMut<LifeState>) {
-    let mut rng = rand::thread_rng();
-    let die = Uniform::from(1..5);
-
-    // life_state.new.clear();
-    let mut ne = Vec::with_capacity(CAP);
-
-    for idx in 0..affines.0.len() {
-        let t = die.sample(&mut rng);
-
-        if t == 1 {
-            // life_state.new.push(idx);
-            life_state.new[idx] = true;
-            ne.push(idx);
-        }
-    }
-    // dbg!(&life_state);
-
-    spawn_idxs(commands, &affines.0, &ne);
+fn init_life(mut evt: EventWriter<AddNoiseEvent>) {
+    evt.send(AddNoiseEvent);
 }
 
-fn spawn_idxs(mut commands: Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>) {
+fn add_noise(
+    mut commands: Commands,
+    affines: Res<Affines>,
+    mut life_state: ResMut<LifeState>,
+    mut evts: EventReader<AddNoiseEvent>,
+) {
+    for _ in evts.iter() {
+        let mut rng = rand::thread_rng();
+        let die = Uniform::from(1..5);
+
+        // life_state.new.clear();
+        let mut ne = Vec::with_capacity(CAP);
+
+        for idx in 0..affines.0.len() {
+            let t = die.sample(&mut rng);
+
+            if t == 1 {
+                // life_state.new.push(idx);
+                life_state.new[idx] = true;
+                ne.push(idx);
+            }
+        }
+
+        // dbg!(&life_state);
+
+        spawn_idxs(&mut commands, &affines.0, &ne);
+    }
+}
+
+fn spawn_idxs(mut commands: &mut Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>) {
     let mut g = GeometryBuilder::new();
     for aff in idxs {
         let points = HAT_OUTLINE
@@ -147,6 +159,7 @@ fn spawn_idxs(mut commands: Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>)
 fn step_life(
     mut commands: Commands,
     mut life_state: ResMut<LifeState>,
+    life_config: Res<LifeConfig>,
     affines: Res<Affines>,
     kdtree: Res<MetaTileKdTree>,
     cells: Query<Entity, With<Cells>>,
@@ -164,17 +177,10 @@ fn step_life(
         let count = ns
             .iter()
             .filter(|idx| life_state.old[**idx] == true)
-            .count();
+            .count() as u32;
         life_state.new[i] = match x {
-            true => match count {
-                1 => true,
-                2 => true,
-                _ => false,
-            },
-            false => match count {
-                2 => true,
-                _ => false,
-            },
+            true => life_config.survival.contains(&count),
+            false => life_config.birth.contains(&count),
         };
         if life_state.new[i] {
             ne.push(i);
@@ -186,7 +192,7 @@ fn step_life(
     }
     // dbg!(&ne);
     // life_state.new = hs.into_iter().collect();
-    spawn_idxs(commands, &affines.0, &ne);
+    spawn_idxs(&mut commands, &affines.0, &ne);
 }
 
 fn kdtree(mut commands: Commands, mtt: Res<MetaTileTree>) {
@@ -214,14 +220,34 @@ fn kdtree(mut commands: Commands, mtt: Res<MetaTileTree>) {
     commands.insert_resource(Affines(affines));
 }
 
+fn life_running(config: Res<LifeConfig>) -> bool {
+    config.running
+}
+
+#[derive(Resource, Debug)]
+pub struct LifeConfig {
+    pub running: bool,
+    pub birth: HashSet<u32>,
+    pub survival: HashSet<u32>,
+}
+
 pub struct LifePlugin;
+
+pub struct AddNoiseEvent;
 
 impl Plugin for LifePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(kdtree)
             // .insert_resource(life_state)
+            .insert_resource(LifeConfig {
+                running: false,
+                birth: HashSet::from([3]),
+                survival: HashSet::from([2, 3]),
+            })
+            .add_event::<AddNoiseEvent>()
             .add_startup_system(init_life.in_base_set(PostStartup))
-            .add_system(step_life);
+            .add_system(add_noise)
+            .add_system(step_life.run_if(life_running));
         // .add_system(step_life.in_schedule(CoreSchedule::FixedUpdate))
         // configure our fixed timestep schedule to run twice a second
         // .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP));
