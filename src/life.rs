@@ -160,20 +160,19 @@ fn step_life(
     mut commands: Commands,
     mut life_state: ResMut<LifeState>,
     life_config: Res<LifeConfig>,
-    affines: Res<Affines>,
-    kdtree: Res<MetaTileKdTree>,
     cells: Query<Entity, With<Cells>>,
+    neighbors: Res<HatNeighbors>,
+    affines: Res<Affines>,
 ) {
     for c in cells.iter() {
         commands.entity(c).despawn();
     }
     life_state.swap();
-    let mut hs: HashSet<usize> = HashSet::new();
     let mut ne = Vec::with_capacity(CAP);
     let life_state = &mut *life_state;
 
     for (i, x) in life_state.old.iter().enumerate() {
-        let ns = neighbors(&kdtree.0, &affines.0, i);
+        let ns = &neighbors.0[i];
         let count = ns
             .iter()
             .filter(|idx| life_state.old[**idx] == true)
@@ -215,10 +214,19 @@ fn kdtree(mut commands: Commands, mtt: Res<MetaTileTree>) {
         old: vec![false; affines.len()],
         new: vec![false; affines.len()],
     };
+
+    let neighbors: Vec<_> = (0..(affines.len()))
+        .map(|a| neighbors(&kdtree, &affines, a))
+        .collect();
+
     commands.insert_resource(life_state);
     commands.insert_resource(MetaTileKdTree(kdtree));
     commands.insert_resource(Affines(affines));
+    commands.insert_resource(HatNeighbors(neighbors));
 }
+
+#[derive(Resource, Debug)]
+struct HatNeighbors(Vec<Vec<usize>>);
 
 fn life_running(config: Res<LifeConfig>) -> bool {
     config.running
@@ -247,9 +255,12 @@ impl Plugin for LifePlugin {
             .add_event::<AddNoiseEvent>()
             .add_startup_system(init_life.in_base_set(PostStartup))
             .add_system(add_noise)
-            .add_system(step_life.run_if(life_running));
-        // .add_system(step_life.in_schedule(CoreSchedule::FixedUpdate))
-        // configure our fixed timestep schedule to run twice a second
-        // .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP));
+            // .add_system(step_life.run_if(life_running));
+            .add_system(
+                step_life
+                    .run_if(life_running)
+                    .in_schedule(CoreSchedule::FixedUpdate),
+            )
+            .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP));
     }
 }

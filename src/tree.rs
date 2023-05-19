@@ -323,7 +323,7 @@ fn background_polygons(mut commands: Commands, mtt: Res<MetaTileTree>) {
             TileType::FHat => &polys.f,
             _ => panic!(),
         };
-        for chunk in polys.chunks(50_000) {
+        for chunk in polys.chunks(500) {
             let mut g = GeometryBuilder::new();
             for tile in chunk {
                 g = g.add(tile);
