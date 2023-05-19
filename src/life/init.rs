@@ -1,21 +1,19 @@
 // use bevy::ecs::schedule::ShouldRun;
 use bevy::{math::Affine2, prelude::*};
-use bevy_prototype_lyon::prelude::*;
+
 use kiddo::{distance::squared_euclidean, KdTree};
-use std::collections::HashSet;
+
 use std::ops::Mul;
 
-use rand::distributions::{Distribution, Uniform};
+use rand::distributions::Distribution;
 
 use crate::constants::CAP;
 use crate::{
-    constants::*,
     meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
     tree::MetaTileTree,
 };
 
 use super::noise::AddNoiseEvent;
-use super::LifeConfig;
 
 #[derive(Resource)]
 pub struct MetaTileKdTree(pub KdTree<f32, 2>);
@@ -115,7 +113,7 @@ pub fn kdtree(mut commands: Commands, mtt: Res<MetaTileTree>) {
         .enumerate()
         .for_each(|(idx, a)| kdtree.add(a.translation.as_ref(), idx));
 
-    let mut life_state = LifeState {
+    let life_state = LifeState {
         // old: Vec::with_capacity(CAP),
         // new: Vec::with_capacity(CAP),
         old: vec![false; affines.len()],

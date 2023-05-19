@@ -3,20 +3,10 @@ use bevy::prelude::*;
 pub struct AddNoiseEvent;
 
 // use bevy::ecs::schedule::ShouldRun;
-use bevy::{math::Affine2, prelude::*};
-use bevy_prototype_lyon::prelude::*;
-use kiddo::{distance::squared_euclidean, KdTree};
-use std::collections::HashSet;
-use std::ops::Mul;
 
 use rand::distributions::{Distribution, Uniform};
 
 use crate::constants::CAP;
-use crate::{
-    constants::*,
-    meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
-    tree::MetaTileTree,
-};
 
 use super::init::{Affines, LifeState};
 use super::step::spawn_idxs;

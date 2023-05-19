@@ -1,24 +1,17 @@
 // use bevy::ecs::schedule::ShouldRun;
 use bevy::{math::Affine2, prelude::*};
 use bevy_prototype_lyon::prelude::*;
-use kiddo::{distance::squared_euclidean, KdTree};
-use std::collections::HashSet;
-use std::ops::Mul;
 
-use rand::distributions::{Distribution, Uniform};
+use rand::distributions::Distribution;
 
 use crate::constants::CAP;
-use crate::{
-    constants::*,
-    meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
-    tree::MetaTileTree,
-};
+use crate::meta_tiles::HAT_OUTLINE;
 
 use super::init::{Affines, Cells, HatNeighbors, LifeState};
-use super::noise::AddNoiseEvent;
+
 use super::LifeConfig;
 
-pub fn spawn_idxs(mut commands: &mut Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>) {
+pub fn spawn_idxs(commands: &mut Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>) {
     let mut g = GeometryBuilder::new();
     for aff in idxs {
         let points = HAT_OUTLINE
@@ -63,10 +56,7 @@ pub fn step_life(
 
     for (i, x) in life_state.old.iter().enumerate() {
         let ns = &neighbors.0[i];
-        let count = ns
-            .iter()
-            .filter(|idx| life_state.old[**idx] == true)
-            .count() as u32;
+        let count = ns.iter().filter(|idx| life_state.old[**idx]).count() as u32;
         life_state.new[i] = match x {
             true => life_config.survival.contains(&count),
             false => life_config.birth.contains(&count),
