@@ -279,3 +279,21 @@ fn is_hat(s: TileType) -> bool {
         TileType::FHat => true,
     }
 }
+
+fn shape_to_fill_color(shape: TileType) -> Color {
+    let _tr = 0.4;
+    match shape {
+        TileType::H1Hat => H_MIRROR_COLOR,
+        TileType::HHat => H_COLOR,
+        TileType::THat => T_COLOR,
+        TileType::PHat => P_COLOR,
+        TileType::FHat => F_COLOR,
+        // TileType::H => Color::rgba(0.0, 0.0, 1.0, tr),
+        // TileType::T => Color::rgba(0.0, 1.0, 1.0, tr),
+        // TileType::P => Color::rgba(1.0, 0.0, 1.0, tr),
+        // TileType::F => Color::rgba(1.0, 1.0, 0.0, tr),
+        // TileType::Pseudo => _
+        _ => Color::rgba(1.0, 1.0, 1.0, 0.0),
+        // _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
+    }
+}

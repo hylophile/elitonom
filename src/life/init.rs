@@ -5,8 +5,6 @@ use kiddo::{distance::squared_euclidean, KdTree};
 
 use std::ops::Mul;
 
-use rand::distributions::Distribution;
-
 use crate::constants::CAP;
 use crate::{
     meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
@@ -53,7 +51,7 @@ fn touching(a: Affine2, b: Affine2) -> bool {
     false
 }
 
-fn neighbors(kdtree: &KdTree<f32, 2>, affines: &Vec<Affine2>, idx: usize) -> Vec<usize> {
+fn neighbors(kdtree: &KdTree<f32, 2>, affines: &[Affine2], idx: usize) -> Vec<usize> {
     let n = 20;
     let mut ns: Vec<usize> = Vec::with_capacity(n);
 

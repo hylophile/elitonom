@@ -40,15 +40,15 @@ impl fmt::Display for MetaTile {
 }
 
 impl MetaTile {
-    pub fn new(transform: Affine2, shape: TileType, width: usize, outline: Vec<Vec2>) -> Self {
-        Self {
-            transform,
-            shape,
-            width,
-            outline,
-            children: Vec::new(),
-        }
-    }
+    // pub fn new(transform: Affine2, shape: TileType, width: usize, outline: Vec<Vec2>) -> Self {
+    //     Self {
+    //         transform,
+    //         shape,
+    //         width,
+    //         outline,
+    //         children: Vec::new(),
+    //     }
+    // }
 
     pub fn push(self: &mut MetaTile, mt: MetaTile) {
         self.children.push(Arc::new(mt))

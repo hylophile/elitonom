@@ -2,8 +2,6 @@
 use bevy::{math::Affine2, prelude::*};
 use bevy_prototype_lyon::prelude::*;
 
-use rand::distributions::Distribution;
-
 use crate::constants::CAP;
 use crate::meta_tiles::HAT_OUTLINE;
 
@@ -11,7 +9,7 @@ use super::init::{Affines, Cells, HatNeighbors, LifeState};
 
 use super::LifeConfig;
 
-pub fn spawn_idxs(commands: &mut Commands, affines: &Vec<Affine2>, idxs: &Vec<usize>) {
+pub fn spawn_idxs(commands: &mut Commands, affines: &[Affine2], idxs: &Vec<usize>) {
     let mut g = GeometryBuilder::new();
     for aff in idxs {
         let points = HAT_OUTLINE

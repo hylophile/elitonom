@@ -1,10 +1,10 @@
 use bevy::prelude::Color;
 
-pub const H_COLOR: Color = Color::WHITE;
-pub const H_MIRROR_COLOR: Color = Color::SEA_GREEN;
-pub const T_COLOR: Color = Color::TEAL;
-pub const P_COLOR: Color = Color::CRIMSON;
-pub const F_COLOR: Color = Color::GOLD;
+pub const _H_COLOR: Color = Color::WHITE;
+pub const _H_MIRROR_COLOR: Color = Color::SEA_GREEN;
+pub const _T_COLOR: Color = Color::TEAL;
+pub const _P_COLOR: Color = Color::CRIMSON;
+pub const _F_COLOR: Color = Color::GOLD;
 // pub static STROKE_COLOR: Color = Color::rgba(1.0, 1.0, 1.0, 1.0);
 
 pub static STROKE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 1.0);
