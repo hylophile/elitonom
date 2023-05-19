@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
 
-use crate::life::{AddNoiseEvent, LifeConfig};
+use crate::life::{noise::AddNoiseEvent, LifeConfig};
 
 pub struct UIPlugin;
 
