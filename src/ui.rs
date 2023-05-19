@@ -58,14 +58,17 @@ fn ui_example_system(
                         .chars()
                         .filter_map(|c| c.to_digit(10))
                         .collect();
-                    // dbg!(life_config);
                 }
             });
             ui.horizontal(|ui| {
                 ui.label("Survival:");
                 let response = ui.text_edit_singleline(&mut ui_state.survival);
                 if response.changed() {
-                    // …
+                    life_config.survival = ui_state
+                        .survival
+                        .chars()
+                        .filter_map(|c| c.to_digit(10))
+                        .collect();
                 }
             });
             // ui.add(egui::widgets::Image::new(
