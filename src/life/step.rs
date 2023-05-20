@@ -7,7 +7,7 @@ use crate::meta_tiles::HAT_OUTLINE;
 
 use super::init::{Affines, Cells, HatNeighbors, LifeState};
 
-use super::LifeConfig;
+use super::{LifeConfig, StepTimer};
 
 pub fn spawn_idxs(commands: &mut Commands, affines: &[Affine2], idxs: &Vec<usize>) {
     let mut g = GeometryBuilder::new();
@@ -44,30 +44,34 @@ pub fn step_life(
     cells: Query<Entity, With<Cells>>,
     neighbors: Res<HatNeighbors>,
     affines: Res<Affines>,
+    time: Res<Time>,
+    mut step_timer: ResMut<StepTimer>,
 ) {
-    for c in cells.iter() {
-        commands.entity(c).despawn();
-    }
-    life_state.swap();
-    let mut ne = Vec::with_capacity(CAP);
-    let life_state = &mut *life_state;
-
-    for (i, x) in life_state.old.iter().enumerate() {
-        let ns = &neighbors.0[i];
-        let count = ns.iter().filter(|idx| life_state.old[**idx]).count() as u32;
-        life_state.new[i] = match x {
-            true => life_config.survival.contains(&count),
-            false => life_config.birth.contains(&count),
-        };
-        if life_state.new[i] {
-            ne.push(i);
+    if step_timer.0.tick(time.delta()).finished() {
+        for c in cells.iter() {
+            commands.entity(c).despawn();
         }
+        life_state.swap();
+        let mut ne = Vec::with_capacity(CAP);
+        let life_state = &mut *life_state;
 
-        // ns.iter().for_each(|n| {
-        //     let _ = hs.insert(*n);
-        // });
+        for (i, x) in life_state.old.iter().enumerate() {
+            let ns = &neighbors.0[i];
+            let count = ns.iter().filter(|idx| life_state.old[**idx]).count() as u32;
+            life_state.new[i] = match x {
+                true => life_config.survival.contains(&count),
+                false => life_config.birth.contains(&count),
+            };
+            if life_state.new[i] {
+                ne.push(i);
+            }
+
+            // ns.iter().for_each(|n| {
+            //     let _ = hs.insert(*n);
+            // });
+        }
+        // dbg!(&ne);
+        // life_state.new = hs.into_iter().collect();
+        spawn_idxs(&mut commands, &affines.0, &ne);
     }
-    // dbg!(&ne);
-    // life_state.new = hs.into_iter().collect();
-    spawn_idxs(&mut commands, &affines.0, &ne);
 }

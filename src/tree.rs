@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, ops::Mul, sync::Arc};
 
 use crate::{
-    constants::*,
+    constants::{LEVELS, STROKE_COLOR, STROKE_WIDTH},
     meta_tiles::{f_init, h_init, p_init, t_init, MetaTile, TileType},
     utils::{intersect, match_two, rot_about},
 };
@@ -323,7 +323,7 @@ fn background_polygons(mut commands: Commands, mtt: Res<MetaTileTree>) {
             TileType::FHat => &polys.f,
             _ => panic!(),
         };
-        for chunk in polys.chunks(500) {
+        for chunk in polys.chunks(500_000) {
             let mut g = GeometryBuilder::new();
             for tile in chunk {
                 g = g.add(tile);
