@@ -5,7 +5,7 @@ use bevy_prototype_lyon::prelude::*;
 use crate::constants::CAP;
 use crate::meta_tiles::HAT_OUTLINE;
 
-use super::init::{Affines, Cells, HatNeighbors, LifeState};
+use super::init::{Affines, AliveCells, HatNeighbors, LifeState};
 
 use super::{LifeConfig, StepTimer};
 
@@ -33,7 +33,7 @@ pub fn spawn_idxs(commands: &mut Commands, affines: &[Affine2], idxs: &Vec<usize
             ..default()
         },
         Fill::color(Color::rgba(0.0, 0.0, 0.0, 1.0)),
-        Cells,
+        AliveCells,
     ));
 }
 
@@ -41,7 +41,7 @@ pub fn step_life(
     mut commands: Commands,
     mut life_state: ResMut<LifeState>,
     life_config: Res<LifeConfig>,
-    cells: Query<Entity, With<Cells>>,
+    cells: Query<Entity, With<AliveCells>>,
     neighbors: Res<HatNeighbors>,
     affines: Res<Affines>,
     time: Res<Time>,

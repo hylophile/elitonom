@@ -1,9 +1,9 @@
-mod init;
+pub mod init;
 pub mod noise;
-mod step;
+pub mod step;
 
 use self::{
-    init::{init_life, kdtree},
+    init::{gen_neighbors, init_life},
     noise::{add_noise, AddNoiseEvent},
     step::step_life,
 };
@@ -28,7 +28,7 @@ pub struct LifePlugin;
 impl Plugin for LifePlugin {
     fn build(&self, app: &mut App) {
         let update_interval = 0.25;
-        app.add_startup_system(kdtree)
+        app.add_system(gen_neighbors)
             // .insert_resource(life_state)
             .insert_resource(LifeConfig {
                 running: false,

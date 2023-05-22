@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
 
-use crate::life::{noise::AddNoiseEvent, LifeConfig, StepTimer};
+use crate::{
+    life::{noise::AddNoiseEvent, LifeConfig, StepTimer},
+    tree::{MetaTileType, TreeConfig},
+};
 
 pub struct UIPlugin;
 
@@ -10,6 +13,8 @@ struct UIState {
     birth: String,
     survival: String,
     update_interval: String,
+    levels: String,
+    meta_tile: MetaTileType,
 }
 
 impl Plugin for UIPlugin {
@@ -18,25 +23,30 @@ impl Plugin for UIPlugin {
             birth: "3".to_string(),
             survival: "23".to_string(),
             update_interval: "0.25".to_string(),
+            levels: "5".to_string(),
+            meta_tile: MetaTileType::H,
         })
         .add_plugin(EguiPlugin)
         .add_startup_system(configure_visuals_system)
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
-        .add_system(ui_example_system);
+        .add_system(ui_system);
     }
 }
 fn configure_visuals_system(mut egui_settings: ResMut<EguiSettings>) {
     egui_settings.scale_factor = 1.5;
 }
 
-fn ui_example_system(
+fn ui_system(
     mut contexts: EguiContexts,
     mut ui_state: ResMut<UIState>,
     mut life_config: ResMut<LifeConfig>,
+    mut tree_config: ResMut<TreeConfig>,
     mut evt: EventWriter<AddNoiseEvent>,
     mut step_timer: ResMut<StepTimer>,
 ) {
+    contexts.ctx_mut().set_visuals(egui::Visuals::light());
+
     egui::SidePanel::left("side_panel")
         // .default_width(500.0)
         .exact_width(150.0)
@@ -90,6 +100,37 @@ fn ui_example_system(
                 ui.label("s");
             });
 
+            ui.horizontal(|ui| {
+                if ui
+                    .radio_value(&mut ui_state.meta_tile, MetaTileType::H, "H")
+                    .clicked()
+                {
+                    ui_state.meta_tile = MetaTileType::H;
+                    tree_config.meta_tile = MetaTileType::H;
+                };
+                if ui
+                    .radio_value(&mut ui_state.meta_tile, MetaTileType::T, "T")
+                    .clicked()
+                {
+                    ui_state.meta_tile = MetaTileType::T;
+                    tree_config.meta_tile = MetaTileType::T;
+                };
+
+                if ui
+                    .radio_value(&mut ui_state.meta_tile, MetaTileType::P, "P")
+                    .clicked()
+                {
+                    ui_state.meta_tile = MetaTileType::P;
+                    tree_config.meta_tile = MetaTileType::P;
+                };
+                if ui
+                    .radio_value(&mut ui_state.meta_tile, MetaTileType::F, "F")
+                    .clicked()
+                {
+                    ui_state.meta_tile = MetaTileType::F;
+                    tree_config.meta_tile = MetaTileType::F;
+                };
+            })
             // ui.add(egui::widgets::Image::new(
             //     egui_texture_handle.id(),
             //     egui_texture_handle.size_vec2(),

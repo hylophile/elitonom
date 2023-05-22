@@ -32,10 +32,10 @@ impl LifeState {
 }
 
 #[derive(Component)]
-pub struct Cells;
+pub struct AliveCells;
 
 fn touching(a: Affine2, b: Affine2) -> bool {
-    let eps = 0.0001;
+    let eps = 0.1;
     let pa = HAT_OUTLINE.iter().map(|p| a.transform_point2(*p));
     let pb = HAT_OUTLINE.iter().map(|p| b.transform_point2(*p));
     for p in pa {
@@ -97,35 +97,40 @@ pub fn init_life(mut evt: EventWriter<AddNoiseEvent>) {
 }
 
 /// .
-pub fn kdtree(mut commands: Commands, mtt: Res<MetaTileTree>) {
-    let mut affines = Vec::with_capacity(CAP);
-    make_affines(
-        &mut affines,
-        Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
-        &mtt.0,
-    );
-    let mut kdtree: KdTree<f32, 2> = KdTree::with_capacity(affines.len());
+pub fn gen_neighbors(mut commands: Commands, mtt: Option<Res<MetaTileTree>>) {
+    if mtt.is_some() {
+        let mtt = mtt.unwrap();
+        if mtt.is_added() || mtt.is_changed() {
+            let mut affines = Vec::with_capacity(CAP);
+            make_affines(
+                &mut affines,
+                Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
+                &mtt.0,
+            );
+            let mut kdtree: KdTree<f32, 2> = KdTree::with_capacity(affines.len());
 
-    affines
-        .iter()
-        .enumerate()
-        .for_each(|(idx, a)| kdtree.add(a.translation.as_ref(), idx));
+            affines
+                .iter()
+                .enumerate()
+                .for_each(|(idx, a)| kdtree.add(a.translation.as_ref(), idx));
 
-    let life_state = LifeState {
-        // old: Vec::with_capacity(CAP),
-        // new: Vec::with_capacity(CAP),
-        old: vec![false; affines.len()],
-        new: vec![false; affines.len()],
-    };
+            let life_state = LifeState {
+                // old: Vec::with_capacity(CAP),
+                // new: Vec::with_capacity(CAP),
+                old: vec![false; affines.len()],
+                new: vec![false; affines.len()],
+            };
 
-    let neighbors: Vec<_> = (0..(affines.len()))
-        .map(|a| neighbors(&kdtree, &affines, a))
-        .collect();
+            let neighbors: Vec<_> = (0..(affines.len()))
+                .map(|a| neighbors(&kdtree, &affines, a))
+                .collect();
 
-    commands.insert_resource(life_state);
-    // commands.insert_resource(MetaTileKdTree(kdtree));
-    commands.insert_resource(Affines(affines));
-    commands.insert_resource(HatNeighbors(neighbors));
+            commands.insert_resource(life_state);
+            // commands.insert_resource(MetaTileKdTree(kdtree));
+            commands.insert_resource(Affines(affines));
+            commands.insert_resource(HatNeighbors(neighbors));
+        }
+    }
 }
 
 #[derive(Resource, Debug)]

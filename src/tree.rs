@@ -2,6 +2,7 @@ use std::{f32::consts::PI, ops::Mul, sync::Arc};
 
 use crate::{
     constants::{LEVELS, STROKE_COLOR, STROKE_WIDTH},
+    life::init::AliveCells,
     meta_tiles::{f_init, h_init, p_init, t_init, MetaTile, TileType},
     utils::{intersect, match_two, rot_about},
 };
@@ -265,101 +266,146 @@ pub struct TreePlugin;
 #[derive(Resource)]
 pub struct MetaTileTree(pub MetaTile);
 
+#[derive(Resource, Debug)]
+pub struct TreeConfig {
+    pub levels: usize,
+    pub meta_tile: MetaTileType,
+}
 impl Plugin for TreePlugin {
     fn build(&self, app: &mut App) {
-        let mut a = AllFour {
-            h: h_init(),
-            t: t_init(),
-            p: p_init(),
-            f: f_init(),
-        };
-
-        for _ in 0..LEVELS {
-            let patch = construct_patch(a.h, a.t, a.p, a.f);
-            a = construct_meta_tiles(patch);
-        }
-        // let cap = 13_usize.pow(LEVELS.try_into().unwrap());
-        let which_meta_tile = a.h;
-
-        app.insert_resource(MetaTileTree(which_meta_tile))
-            .add_startup_system(background_polygons);
+        app.insert_resource(TreeConfig {
+            levels: 5,
+            meta_tile: MetaTileType::H,
+        })
+        .add_system(background_polygons);
     }
 }
 
-fn background_polygons(mut commands: Commands, mtt: Res<MetaTileTree>) {
-    let cap = 200_000;
-
-    let mut polys = HatPolys {
-        h: Vec::with_capacity(cap),
-        h1: Vec::with_capacity(cap),
-        t: Vec::with_capacity(cap),
-        f: Vec::with_capacity(cap),
-        p: Vec::with_capacity(cap),
-        meta: vec![Vec::new(); LEVELS + 2],
+fn construct_tree(levels: usize) -> AllFour {
+    let mut a = AllFour {
+        h: h_init(),
+        t: t_init(),
+        p: p_init(),
+        f: f_init(),
     };
 
-    make_polygons(
-        &mut polys,
-        Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
-        &mtt.0,
-    );
-    // std::process::exit(0);
-
-    for (i, shape) in [
-        TileType::H1Hat,
-        TileType::HHat,
-        TileType::THat,
-        TileType::FHat,
-        TileType::PHat,
-    ]
-    .iter()
-    .enumerate()
-    {
-        let polys = match shape {
-            TileType::H1Hat => &polys.h1,
-            TileType::HHat => &polys.h,
-            TileType::THat => &polys.t,
-            TileType::PHat => &polys.p,
-            TileType::FHat => &polys.f,
-            _ => panic!(),
-        };
-        for chunk in polys.chunks(500_000) {
-            let mut g = GeometryBuilder::new();
-            for tile in chunk {
-                g = g.add(tile);
-            }
-
-            // std::process::exit(0);
-
-            commands.spawn((
-                ShapeBundle {
-                    path: g.build(),
-                    transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
-                    ..default()
-                },
-                // Fill::color(shape_to_fill_color(*shape)),
-                Stroke::new(STROKE_COLOR, STROKE_WIDTH),
-            ));
-        }
+    for _ in 0..levels {
+        let patch = construct_patch(a.h, a.t, a.p, a.f);
+        a = construct_meta_tiles(patch);
     }
 
-    if false {
-        for (i, outlines) in polys.meta.iter().enumerate() {
-            let mut g = GeometryBuilder::new();
-            for outline in outlines {
-                g = g.add(outline);
+    a
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub enum MetaTileType {
+    H,
+    T,
+    P,
+    F,
+}
+
+#[derive(Component)]
+pub struct DeadCells;
+
+fn background_polygons(
+    mut commands: Commands,
+    tree_config: Res<TreeConfig>,
+    dead_cells: Query<Entity, With<DeadCells>>,
+    alive_cells: Query<Entity, With<AliveCells>>,
+) {
+    if tree_config.is_added() || tree_config.is_changed() {
+        for c in dead_cells.iter() {
+            commands.entity(c).despawn();
+        }
+        for c in alive_cells.iter() {
+            commands.entity(c).despawn();
+        }
+        let all = construct_tree(tree_config.levels);
+        let mtt = match tree_config.meta_tile {
+            MetaTileType::H => all.h,
+            MetaTileType::T => all.t,
+            MetaTileType::P => all.p,
+            MetaTileType::F => all.f,
+        };
+
+        let cap = 200_000;
+
+        let mut polys = HatPolys {
+            h: Vec::with_capacity(cap),
+            h1: Vec::with_capacity(cap),
+            t: Vec::with_capacity(cap),
+            f: Vec::with_capacity(cap),
+            p: Vec::with_capacity(cap),
+            meta: vec![Vec::new(); tree_config.levels + 2],
+        };
+
+        make_polygons(
+            &mut polys,
+            Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
+            &mtt,
+        );
+
+        commands.insert_resource(MetaTileTree(mtt));
+        // std::process::exit(0);
+
+        for (i, shape) in [
+            TileType::H1Hat,
+            TileType::HHat,
+            TileType::THat,
+            TileType::FHat,
+            TileType::PHat,
+        ]
+        .iter()
+        .enumerate()
+        {
+            let polys = match shape {
+                TileType::H1Hat => &polys.h1,
+                TileType::HHat => &polys.h,
+                TileType::THat => &polys.t,
+                TileType::PHat => &polys.p,
+                TileType::FHat => &polys.f,
+                _ => panic!(),
+            };
+            for chunk in polys.chunks(500_000) {
+                let mut g = GeometryBuilder::new();
+                for tile in chunk {
+                    g = g.add(tile);
+                }
+
+                // std::process::exit(0);
+
+                commands.spawn((
+                    ShapeBundle {
+                        path: g.build(),
+                        transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
+                        ..default()
+                    },
+                    // Fill::color(shape_to_fill_color(*shape)),
+                    Stroke::new(STROKE_COLOR, STROKE_WIDTH),
+                    DeadCells,
+                ));
             }
+        }
 
-            // std::process::exit(0);
+        if false {
+            for (i, outlines) in polys.meta.iter().enumerate() {
+                let mut g = GeometryBuilder::new();
+                for outline in outlines {
+                    g = g.add(outline);
+                }
 
-            commands.spawn((
-                ShapeBundle {
-                    path: g.build(),
-                    transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                    ..default()
-                },
-                Stroke::new(STROKE_COLOR, STROKE_WIDTH * 2.0_f32.powi(i as i32)),
-            ));
+                // std::process::exit(0);
+
+                commands.spawn((
+                    ShapeBundle {
+                        path: g.build(),
+                        transform: Transform::from_xyz(0.0, 0.0, 1.0),
+                        ..default()
+                    },
+                    Stroke::new(STROKE_COLOR, STROKE_WIDTH * 2.0_f32.powi(i as i32)),
+                ));
+            }
         }
     }
 }
