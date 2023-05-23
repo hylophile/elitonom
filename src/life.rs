@@ -7,7 +7,7 @@ use self::{
     noise::{add_noise, AddNoiseEvent},
     step::step_life,
 };
-use crate::constants::FIXED_TIMESTEP;
+
 use bevy::app::StartupSet::PostStartup;
 use bevy::prelude::*;
 use std::collections::HashSet;

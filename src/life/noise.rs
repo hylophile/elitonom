@@ -14,7 +14,7 @@ use super::step::spawn_idxs;
 pub fn add_noise(
     mut commands: Commands,
     affines: Option<Res<Affines>>,
-    mut life_state: Option<ResMut<LifeState>>,
+    life_state: Option<ResMut<LifeState>>,
     mut evts: EventReader<AddNoiseEvent>,
 ) {
     if affines.is_some() && life_state.is_some() {

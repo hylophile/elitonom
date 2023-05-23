@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, ops::Mul, sync::Arc};
 
 use crate::{
-    constants::{LEVELS, STROKE_COLOR, STROKE_WIDTH},
+    constants::{STROKE_COLOR, STROKE_WIDTH},
     life::init::AliveCells,
     meta_tiles::{f_init, h_init, p_init, t_init, MetaTile, TileType},
     utils::{intersect, match_two, rot_about},
