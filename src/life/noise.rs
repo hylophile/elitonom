@@ -4,15 +4,18 @@ pub struct AddNoiseEvent;
 
 // use bevy::ecs::schedule::ShouldRun;
 
+use bevy::sprite::MaterialMesh2dBundle;
 use rand::distributions::{Distribution, Uniform};
 
 use crate::constants::CAP;
 
-use super::init::{Affines, LifeState};
-use super::step::spawn_idxs;
+use super::init::{Affines, AliveCells, LifeState};
+use super::step::{hatsmesh, spawn_idxs};
 
 pub fn add_noise(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     affines: Option<Res<Affines>>,
     life_state: Option<ResMut<LifeState>>,
     mut evts: EventReader<AddNoiseEvent>,
@@ -39,7 +42,17 @@ pub fn add_noise(
 
             // dbg!(&life_state);
 
-            spawn_idxs(&mut commands, &affines.0, &ne);
+            let hatss = hatsmesh(&ne, &affines.0);
+            commands.spawn((
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(hatss).into(),
+                    // transform: Transform::default().with_scale(Vec3::splat(128.)),
+                    material: materials.add(ColorMaterial::from(Color::PURPLE)),
+                    ..default()
+                },
+                AliveCells,
+            ));
+            // spawn_idxs(&mut commands, &affines.0, &ne);
         }
     }
 }
