@@ -274,7 +274,7 @@ pub struct TreeConfig {
 impl Plugin for TreePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TreeConfig {
-            levels: 5,
+            levels: 3,
             meta_tile: MetaTileType::H,
         })
         .add_system(background_polygons);
