@@ -11,3 +11,4 @@ cargo run --release
 # Fun rules to try
 - B: 2 / S: 3
 - B: 2 / S: 34
+- B: 24 / S: 
