@@ -47,7 +47,7 @@ pub fn add_noise(
                 MaterialMesh2dBundle {
                     mesh: meshes.add(hatss).into(),
                     // transform: Transform::default().with_scale(Vec3::splat(128.)),
-                    material: materials.add(ColorMaterial::from(Color::PURPLE)),
+                    material: materials.add(ColorMaterial::from(Color::BLACK)),
                     ..default()
                 },
                 AliveCells,

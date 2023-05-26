@@ -27,7 +27,7 @@ pub struct LifePlugin;
 
 impl Plugin for LifePlugin {
     fn build(&self, app: &mut App) {
-        let update_interval = 0.25;
+        let update_interval = 0.1;
         app.add_system(gen_neighbors)
             // .insert_resource(life_state)
             .insert_resource(LifeConfig {
