@@ -10,7 +10,36 @@ use crate::meta_tiles::HAT_OUTLINE;
 
 use super::init::{Affines, AliveCells, HatNeighbors, LifeState};
 
+const SQ3: f32 = 1.732_050_8; // sqrt(3)
 use super::{LifeConfig, StepTimer};
+
+static HO: [[f32; 3]; 13] = [
+    [0.0, 0.0, 0.0],
+    [-1.5, -0.5 * SQ3, 0.0],
+    [-1.0, -SQ3, 0.0],
+    [1.0, -SQ3, 0.0],
+    [1.5, -0.5 * SQ3, 0.0],
+    [3.0, -SQ3, 0.0],
+    [4.5, -0.5 * SQ3, 0.0],
+    [4.0, 0.0, 0.0],
+    [3.0, 0.0, 0.0],
+    [3.0, SQ3, 0.0],
+    [1.5, 1.5 * SQ3, 0.0],
+    [1.0, SQ3, 0.0],
+    [0.0, SQ3, 0.0],
+];
+
+#[rustfmt::skip]
+static IND: [u32; 24] = [
+    0,  1,  3,
+    0,  3,  4,
+    0,  5,  9,
+    0,  9, 10,
+    0, 11, 12,
+    1,  2,  3,
+    5,  6,  7,
+    5,  7,  8,
+];
 
 pub fn hatsmesh(idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
     // let extent_x = quad.size.x / 2.0;
@@ -42,8 +71,29 @@ pub fn hatsmesh(idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
         })
         .flatten()
         .collect();
+    let vertices: Vec<_> = idxs
+        .iter()
+        .map(|id| {
+            HO.iter().map(|h| {
+                [
+                    h[0] + affines[*id].translation.x,
+                    h[1] + affines[*id].translation.y,
+                    0.0,
+                ]
+            })
+        })
+        .flatten()
+        .collect();
+    // dbg!(&vertices);
 
+    // dbg!(vertices.len());
     let is: Vec<u32> = (0..vertices.len() as u32).collect();
+    let is: Vec<u32> = (0..idxs.len() as u32)
+        .map(|j| IND.iter().map(move |i| i + j * 13))
+        .flatten()
+        .collect();
+    // dbg!(is.len());
+    // dbg!(&is);
     let indices = Indices::U32(is);
 
     let positions: Vec<_> = vertices.iter().map(|a| *a).collect();

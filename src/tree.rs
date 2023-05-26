@@ -274,7 +274,7 @@ pub struct TreeConfig {
 impl Plugin for TreePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TreeConfig {
-            levels: 3,
+            levels: 5,
             meta_tile: MetaTileType::H,
         })
         .add_system(background_polygons);
@@ -428,6 +428,7 @@ fn make_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
         .outline
         .iter()
         .map(|p| tt.transform_point2(*p))
+        // .map(|p| (Affine2::from_scale(Vec2::new(100.0, 100.0))).transform_point2(*p))
         .collect();
     let poly = shapes::Polygon {
         points,
