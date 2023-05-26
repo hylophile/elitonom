@@ -13,20 +13,20 @@ use super::init::{Affines, AliveCells, HatNeighbors, LifeState};
 const SQ3: f32 = 1.732_050_8; // sqrt(3)
 use super::{LifeConfig, StepTimer};
 
-static HO: [[f32; 3]; 13] = [
-    [0.0, 0.0, 0.0],
-    [-1.5, -0.5 * SQ3, 0.0],
-    [-1.0, -SQ3, 0.0],
-    [1.0, -SQ3, 0.0],
-    [1.5, -0.5 * SQ3, 0.0],
-    [3.0, -SQ3, 0.0],
-    [4.5, -0.5 * SQ3, 0.0],
-    [4.0, 0.0, 0.0],
-    [3.0, 0.0, 0.0],
-    [3.0, SQ3, 0.0],
-    [1.5, 1.5 * SQ3, 0.0],
-    [1.0, SQ3, 0.0],
-    [0.0, SQ3, 0.0],
+static HO: [[f32; 2]; 13] = [
+    [0.0, 0.0],
+    [-1.5, -0.5 * SQ3],
+    [-1.0, -SQ3],
+    [1.0, -SQ3],
+    [1.5, -0.5 * SQ3],
+    [3.0, -SQ3],
+    [4.5, -0.5 * SQ3],
+    [4.0, 0.0],
+    [3.0, 0.0],
+    [3.0, SQ3],
+    [1.5, 1.5 * SQ3],
+    [1.0, SQ3],
+    [0.0, SQ3],
 ];
 
 #[rustfmt::skip]
@@ -45,49 +45,54 @@ pub fn hatsmesh(idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
     // let extent_x = quad.size.x / 2.0;
     // let extent_y = quad.size.y / 2.0;
 
-    // let (u_left, u_right) = if quad.flip { (1.0, 0.0) } else { (0.0, 1.0) };
-    // let vertices = [
-    //     ([-extent_x, -extent_y, 0.0], [0.0, 0.0, 1.0], [u_left, 1.0]),
-    //     ([-extent_x, extent_y, 0.0], [0.0, 0.0, 1.0], [u_left, 0.0]),
-    //     ([extent_x, extent_y, 0.0], [0.0, 0.0, 1.0], [u_right, 0.0]),
-    //     ([extent_x, -extent_y, 0.0], [0.0, 0.0, 1.0], [u_right, 1.0]),
-    // ];
+    // // let (u_left, u_right) = if quad.flip { (1.0, 0.0) } else { (0.0, 1.0) };
+    // // let vertices = [
+    // //     ([-extent_x, -extent_y, 0.0], [0.0, 0.0, 1.0], [u_left, 1.0]),
+    // //     ([-extent_x, extent_y, 0.0], [0.0, 0.0, 1.0], [u_left, 0.0]),
+    // //     ([extent_x, extent_y, 0.0], [0.0, 0.0, 1.0], [u_right, 0.0]),
+    // //     ([extent_x, -extent_y, 0.0], [0.0, 0.0, 1.0], [u_right, 1.0]),
+    // // ];
+    // let vertices: Vec<_> = idxs
+    //     .iter()
+    //     .map(|id| {
+    //         [
+    //             [
+    //                 affines[*id].translation.x + 10.0,
+    //                 affines[*id].translation.y,
+    //                 0.0,
+    //             ],
+    //             [
+    //                 affines[*id].translation.x + 10.0,
+    //                 affines[*id].translation.y + 10.0,
+    //                 0.0,
+    //             ],
+    //             [affines[*id].translation.x, affines[*id].translation.y, 0.0],
+    //         ]
+    //     })
+    //     .flatten()
+    //     .collect();
     let vertices: Vec<_> = idxs
         .iter()
         .map(|id| {
-            [
-                [
-                    affines[*id].translation.x + 10.0,
-                    affines[*id].translation.y,
-                    0.0,
-                ],
-                [
-                    affines[*id].translation.x + 10.0,
-                    affines[*id].translation.y + 10.0,
-                    0.0,
-                ],
-                [affines[*id].translation.x, affines[*id].translation.y, 0.0],
-            ]
-        })
-        .flatten()
-        .collect();
-    let vertices: Vec<_> = idxs
-        .iter()
-        .map(|id| {
-            HO.iter().map(|h| {
-                [
-                    h[0] + affines[*id].translation.x,
-                    h[1] + affines[*id].translation.y,
-                    0.0,
-                ]
+            HAT_OUTLINE.iter().map(|p| {
+                let p2 = (affines[*id].transform_point2(*p));
+                [p2.x, p2.y, 0.0]
             })
+
+            // HO.iter().map(|h| {
+            //     [
+            //         h[0] + affines[*id].translation.x,
+            //         h[1] + affines[*id].translation.y,
+            //         0.0,
+            //     ]
+            // })
         })
         .flatten()
         .collect();
     // dbg!(&vertices);
 
     // dbg!(vertices.len());
-    let is: Vec<u32> = (0..vertices.len() as u32).collect();
+    // let is: Vec<u32> = (0..vertices.len() as u32).collect();
     let is: Vec<u32> = (0..idxs.len() as u32)
         .map(|j| IND.iter().map(move |i| i + j * 13))
         .flatten()
@@ -185,7 +190,8 @@ pub fn step_life(
             MaterialMesh2dBundle {
                 mesh: meshes.add(hatss).into(),
                 // transform: Transform::default().with_scale(Vec3::splat(128.)),
-                material: materials.add(ColorMaterial::from(Color::PURPLE)),
+                material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.99))),
+                // material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.1))),
                 ..default()
             },
             AliveCells,

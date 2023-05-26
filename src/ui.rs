@@ -22,7 +22,7 @@ impl Plugin for UIPlugin {
         app.insert_resource(UIState {
             birth: "3".to_string(),
             survival: "23".to_string(),
-            update_interval: "0.25".to_string(),
+            update_interval: "0.1".to_string(),
             levels: "5".to_string(),
             meta_tile: MetaTileType::H,
         })
