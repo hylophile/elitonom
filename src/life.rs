@@ -4,7 +4,7 @@ pub mod step;
 
 use self::{
     init::{gen_neighbors, init_life},
-    noise::{add_noise, AddNoiseEvent},
+    noise::{add_noise, remove_noise, AddNoiseEvent, RemoveNoiseEvent},
     step::step_life,
 };
 
@@ -18,6 +18,8 @@ pub struct LifeConfig {
     pub birth: HashSet<u32>,
     pub survival: HashSet<u32>,
     pub update_interval: f32,
+    pub add_noise_percent: f32,
+    pub remove_noise_percent: f32,
 }
 
 #[derive(Resource, Debug)]
@@ -27,7 +29,7 @@ pub struct LifePlugin;
 
 impl Plugin for LifePlugin {
     fn build(&self, app: &mut App) {
-        let update_interval = 0.1;
+        let update_interval = 0.01;
         app.add_system(gen_neighbors)
             // .insert_resource(life_state)
             .insert_resource(LifeConfig {
@@ -35,14 +37,18 @@ impl Plugin for LifePlugin {
                 birth: HashSet::from([3]),
                 survival: HashSet::from([2, 3]),
                 update_interval,
+                add_noise_percent: 0.1,
+                remove_noise_percent: 0.1,
             })
             .insert_resource(StepTimer(Timer::from_seconds(
                 update_interval,
                 TimerMode::Repeating,
             )))
             .add_event::<AddNoiseEvent>()
+            .add_event::<RemoveNoiseEvent>()
             .add_startup_system(init_life.in_base_set(PostStartup))
             .add_system(add_noise)
+            .add_system(remove_noise)
             .add_system(step_life.run_if(life_running));
         // .add_system(
         //     step_life

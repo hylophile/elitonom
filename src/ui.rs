@@ -2,7 +2,10 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
 
 use crate::{
-    life::{noise::AddNoiseEvent, LifeConfig, StepTimer},
+    life::{
+        noise::{AddNoiseEvent, RemoveNoiseEvent},
+        LifeConfig, StepTimer,
+    },
     tree::{MetaTileType, TreeConfig},
 };
 
@@ -15,6 +18,8 @@ struct UIState {
     update_interval: String,
     levels: String,
     meta_tile: MetaTileType,
+    add_noise_percent: String,
+    remove_noise_percent: String,
 }
 
 impl Plugin for UIPlugin {
@@ -22,8 +27,10 @@ impl Plugin for UIPlugin {
         app.insert_resource(UIState {
             birth: "3".to_string(),
             survival: "23".to_string(),
-            update_interval: "0.1".to_string(),
+            update_interval: "0.01".to_string(),
             levels: "5".to_string(),
+            add_noise_percent: "10".to_string(),
+            remove_noise_percent: "10".to_string(),
             meta_tile: MetaTileType::H,
         })
         .add_plugin(EguiPlugin)
@@ -42,7 +49,8 @@ fn ui_system(
     mut ui_state: ResMut<UIState>,
     mut life_config: ResMut<LifeConfig>,
     mut tree_config: ResMut<TreeConfig>,
-    mut evt: EventWriter<AddNoiseEvent>,
+    mut evt1: EventWriter<AddNoiseEvent>,
+    mut evt2: EventWriter<RemoveNoiseEvent>,
     mut step_timer: ResMut<StepTimer>,
 ) {
     contexts.ctx_mut().set_visuals(egui::Visuals::light());
@@ -57,10 +65,55 @@ fn ui_system(
             if ui.button(running_label).clicked() {
                 life_config.running = !life_config.running;
             }
+            ui.horizontal(|ui| {
+                ui.label("Update interval:");
+                let response = ui.text_edit_singleline(&mut ui_state.update_interval);
+                if response.changed() {
+                    if let Ok(update_interval) = ui_state.update_interval.parse::<f32>() {
+                        if update_interval > 0.0 {
+                            *step_timer = StepTimer(Timer::from_seconds(
+                                update_interval,
+                                TimerMode::Repeating,
+                            ));
+                        }
+                    }
+                }
+                ui.label("s");
+            });
 
-            if ui.button("Add Noise").clicked() {
-                evt.send(AddNoiseEvent);
-            }
+            ui.separator();
+
+            ui.horizontal(|ui| {
+                if ui.button("Add Noise").clicked() {
+                    evt1.send(AddNoiseEvent);
+                }
+                let response = ui.text_edit_singleline(&mut ui_state.add_noise_percent);
+                if response.changed() {
+                    life_config.add_noise_percent = ui_state
+                        .add_noise_percent
+                        .parse::<f32>()
+                        .map(|f| f / 100.0)
+                        .unwrap_or(0.15);
+                }
+                ui.label("%");
+            });
+
+            ui.horizontal(|ui| {
+                if ui.button("Remove Noise").clicked() {
+                    evt2.send(RemoveNoiseEvent);
+                }
+                let response = ui.text_edit_singleline(&mut ui_state.remove_noise_percent);
+                if response.changed() {
+                    life_config.remove_noise_percent = ui_state
+                        .remove_noise_percent
+                        .parse::<f32>()
+                        .map(|f| f / 100.0)
+                        .unwrap_or(0.15);
+                }
+                ui.label("%");
+            });
+
+            ui.separator();
 
             ui.horizontal(|ui| {
                 ui.label("Birth:");
@@ -84,21 +137,8 @@ fn ui_system(
                         .collect();
                 }
             });
-            ui.horizontal(|ui| {
-                ui.label("Update interval:");
-                let response = ui.text_edit_singleline(&mut ui_state.update_interval);
-                if response.changed() {
-                    if let Ok(update_interval) = ui_state.update_interval.parse::<f32>() {
-                        if update_interval > 0.0 {
-                            *step_timer = StepTimer(Timer::from_seconds(
-                                update_interval,
-                                TimerMode::Repeating,
-                            ));
-                        }
-                    }
-                }
-                ui.label("s");
-            });
+
+            ui.separator();
 
             ui.horizontal(|ui| {
                 if ui

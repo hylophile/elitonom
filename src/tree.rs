@@ -388,25 +388,28 @@ fn background_polygons(
             }
         }
 
-        if false {
-            for (i, outlines) in polys.meta.iter().enumerate() {
-                let mut g = GeometryBuilder::new();
-                for outline in outlines {
-                    g = g.add(outline);
-                }
-
-                // std::process::exit(0);
-
-                commands.spawn((
-                    ShapeBundle {
-                        path: g.build(),
-                        transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                        ..default()
-                    },
-                    Stroke::new(STROKE_COLOR, STROKE_WIDTH * 2.0_f32.powi(i as i32)),
-                ));
+        // if false {
+        for (i, outlines) in polys.meta.iter().enumerate() {
+            let mut g = GeometryBuilder::new();
+            for outline in outlines {
+                g = g.add(outline);
             }
+
+            // std::process::exit(0);
+
+            commands.spawn((
+                ShapeBundle {
+                    path: g.build(),
+                    transform: Transform::from_xyz(0.0, 0.0, 0.1),
+                    ..default()
+                },
+                Stroke::new(
+                    Color::rgba(0.0, 0.0, 0.0, 0.1),
+                    STROKE_WIDTH * 1.5_f32.powi(i as i32),
+                ),
+            ));
         }
+        // }
     }
 }
 type HatPoints = Vec<shapes::Polygon>;
