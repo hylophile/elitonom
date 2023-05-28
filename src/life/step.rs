@@ -1,33 +1,16 @@
 use bevy::render::mesh::Indices;
 use bevy::render::render_resource::PrimitiveTopology;
 use bevy::sprite::MaterialMesh2dBundle;
+
 // use bevy::ecs::schedule::ShouldRun;
 use bevy::{math::Affine2, prelude::*};
 use bevy_prototype_lyon::prelude::*;
 
-use crate::constants::CAP;
 use crate::meta_tiles::HAT_OUTLINE;
 
 use super::init::{Affines, AliveCells, HatNeighbors, LifeState};
 
-const SQ3: f32 = 1.732_050_8; // sqrt(3)
 use super::{LifeConfig, StepTimer};
-
-static HO: [[f32; 2]; 13] = [
-    [0.0, 0.0],
-    [-1.5, -0.5 * SQ3],
-    [-1.0, -SQ3],
-    [1.0, -SQ3],
-    [1.5, -0.5 * SQ3],
-    [3.0, -SQ3],
-    [4.5, -0.5 * SQ3],
-    [4.0, 0.0],
-    [3.0, 0.0],
-    [3.0, SQ3],
-    [1.5, 1.5 * SQ3],
-    [1.0, SQ3],
-    [0.0, SQ3],
-];
 
 #[rustfmt::skip]
 static IND: [u32; 24] = [
@@ -42,68 +25,20 @@ static IND: [u32; 24] = [
 ];
 
 pub fn hatsmesh(idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
-    // let extent_x = quad.size.x / 2.0;
-    // let extent_y = quad.size.y / 2.0;
-
-    // // let (u_left, u_right) = if quad.flip { (1.0, 0.0) } else { (0.0, 1.0) };
-    // // let vertices = [
-    // //     ([-extent_x, -extent_y, 0.0], [0.0, 0.0, 1.0], [u_left, 1.0]),
-    // //     ([-extent_x, extent_y, 0.0], [0.0, 0.0, 1.0], [u_left, 0.0]),
-    // //     ([extent_x, extent_y, 0.0], [0.0, 0.0, 1.0], [u_right, 0.0]),
-    // //     ([extent_x, -extent_y, 0.0], [0.0, 0.0, 1.0], [u_right, 1.0]),
-    // // ];
-    // let vertices: Vec<_> = idxs
-    //     .iter()
-    //     .map(|id| {
-    //         [
-    //             [
-    //                 affines[*id].translation.x + 10.0,
-    //                 affines[*id].translation.y,
-    //                 0.0,
-    //             ],
-    //             [
-    //                 affines[*id].translation.x + 10.0,
-    //                 affines[*id].translation.y + 10.0,
-    //                 0.0,
-    //             ],
-    //             [affines[*id].translation.x, affines[*id].translation.y, 0.0],
-    //         ]
-    //     })
-    //     .flatten()
-    //     .collect();
-    let vertices: Vec<_> = idxs
-        .iter()
-        .map(|id| {
-            HAT_OUTLINE.iter().map(|p| {
-                let p2 = (affines[*id].transform_point2(*p));
-                [p2.x, p2.y, 0.0]
-            })
-
-            // HO.iter().map(|h| {
-            //     [
-            //         h[0] + affines[*id].translation.x,
-            //         h[1] + affines[*id].translation.y,
-            //         0.0,
-            //     ]
-            // })
+    let mut vertices = Vec::with_capacity(affines.len());
+    vertices.extend(idxs.iter().flat_map(|id| {
+        HAT_OUTLINE.iter().map(|p| {
+            let p2 = affines[*id].transform_point2(*p);
+            [p2.x, p2.y, 0.0]
         })
-        .flatten()
-        .collect();
-    // dbg!(&vertices);
+    }));
 
-    // dbg!(vertices.len());
-    // let is: Vec<u32> = (0..vertices.len() as u32).collect();
-    let is: Vec<u32> = (0..idxs.len() as u32)
-        .map(|j| IND.iter().map(move |i| i + j * 13))
-        .flatten()
-        .collect();
-    // dbg!(is.len());
-    // dbg!(&is);
+    let mut is: Vec<u32> = Vec::with_capacity(IND.len() * idxs.len());
+    is.extend((0..idxs.len() as u32).flat_map(|j| IND.iter().map(move |i| i + j * 13)));
     let indices = Indices::U32(is);
 
-    let positions: Vec<_> = vertices.iter().map(|a| *a).collect();
+    let positions: Vec<_> = vertices.clone();
     let normals: Vec<_> = vertices.iter().map(|_| [0.0, 0.0, 1.0]).collect();
-    // let normals: Vec<_> = vertices.iter().map(|(_, n, _)| *n).collect();
     let uvs: Vec<_> = vertices.iter().map(|_| [1.0, 0.0]).collect();
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
@@ -114,10 +49,10 @@ pub fn hatsmesh(idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
     mesh
 }
 
-pub fn spawn_idxs(
+pub fn _spawn_idxs(
     commands: &mut Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    _meshes: ResMut<Assets<Mesh>>,
+    _materials: ResMut<Assets<ColorMaterial>>,
     affines: &[Affine2],
     idxs: &Vec<usize>,
 ) {
@@ -135,8 +70,6 @@ pub fn spawn_idxs(
         g = g.add(&poly);
     }
 
-    // std::process::exit(0);
-
     commands.spawn((
         ShapeBundle {
             path: g.build(),
@@ -150,52 +83,48 @@ pub fn spawn_idxs(
 
 pub fn step_life(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut life_state: ResMut<LifeState>,
-    life_config: Res<LifeConfig>,
+    (mut meshes, mut materials, mut life_state, mut step_timer): (
+        ResMut<Assets<Mesh>>,
+        ResMut<Assets<ColorMaterial>>,
+        ResMut<LifeState>,
+        ResMut<StepTimer>,
+    ),
+    (life_config, neighbors, affines, time): (
+        Res<LifeConfig>,
+        Res<HatNeighbors>,
+        Res<Affines>,
+        Res<Time>,
+    ),
     cells: Query<Entity, With<AliveCells>>,
-    neighbors: Res<HatNeighbors>,
-    affines: Res<Affines>,
-    time: Res<Time>,
-    mut step_timer: ResMut<StepTimer>,
 ) {
     if step_timer.0.tick(time.delta()).finished() {
         for c in cells.iter() {
             commands.entity(c).despawn();
         }
         life_state.swap();
-        let mut ne = Vec::with_capacity(CAP);
+        let mut ne = Vec::with_capacity(affines.0.len());
         let life_state = &mut *life_state;
 
         for (i, x) in life_state.old.iter().enumerate() {
             let ns = &neighbors.0[i];
-            let count = ns.iter().filter(|idx| life_state.old[**idx]).count() as u32;
+            let count = ns.iter().filter(|idx| life_state.old[**idx]).count(); // as u32;
             life_state.new[i] = match x {
-                true => life_config.survival.contains(&count),
-                false => life_config.birth.contains(&count),
+                true => life_config.survival[count],
+                false => life_config.birth[count],
             };
             if life_state.new[i] {
                 ne.push(i);
             }
-
-            // ns.iter().for_each(|n| {
-            //     let _ = hs.insert(*n);
-            // });
         }
-        // dbg!(&ne);
-        // life_state.new = hs.into_iter().collect();
         let hatss = hatsmesh(&ne, &affines.0);
         commands.spawn((
             MaterialMesh2dBundle {
                 mesh: meshes.add(hatss).into(),
-                // transform: Transform::default().with_scale(Vec3::splat(128.)),
                 material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.99))),
                 // material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.1))),
                 ..default()
             },
             AliveCells,
         ));
-        // spawn_idxs(&mut commands, &affines.0, &ne);
     }
 }

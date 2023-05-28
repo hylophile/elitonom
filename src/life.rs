@@ -10,13 +10,12 @@ use self::{
 
 use bevy::app::StartupSet::PostStartup;
 use bevy::prelude::*;
-use std::collections::HashSet;
 
 #[derive(Resource, Debug)]
 pub struct LifeConfig {
     pub running: bool,
-    pub birth: HashSet<u32>,
-    pub survival: HashSet<u32>,
+    pub birth: [bool; 8],
+    pub survival: [bool; 8],
     pub update_interval: f32,
     pub add_noise_percent: f32,
     pub remove_noise_percent: f32,
@@ -31,11 +30,10 @@ impl Plugin for LifePlugin {
     fn build(&self, app: &mut App) {
         let update_interval = 0.01;
         app.add_system(gen_neighbors)
-            // .insert_resource(life_state)
             .insert_resource(LifeConfig {
                 running: false,
-                birth: HashSet::from([3]),
-                survival: HashSet::from([2, 3]),
+                birth: [false, false, false, true, false, false, false, false],
+                survival: [false, false, true, true, false, false, false, false],
                 update_interval,
                 add_noise_percent: 0.1,
                 remove_noise_percent: 0.1,

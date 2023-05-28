@@ -16,7 +16,7 @@ struct UIState {
     birth: String,
     survival: String,
     update_interval: String,
-    levels: String,
+    // levels: String,
     meta_tile: MetaTileType,
     add_noise_percent: String,
     remove_noise_percent: String,
@@ -28,7 +28,7 @@ impl Plugin for UIPlugin {
             birth: "3".to_string(),
             survival: "23".to_string(),
             update_interval: "0.01".to_string(),
-            levels: "5".to_string(),
+            // levels: "5".to_string(),
             add_noise_percent: "10".to_string(),
             remove_noise_percent: "10".to_string(),
             meta_tile: MetaTileType::H,
@@ -119,22 +119,31 @@ fn ui_system(
                 ui.label("Birth:");
                 let response = ui.text_edit_singleline(&mut ui_state.birth);
                 if response.changed() {
-                    life_config.birth = ui_state
+                    let mut n = [false, false, false, false, false, false, false, false];
+                    ui_state
                         .birth
                         .chars()
                         .filter_map(|c| c.to_digit(10))
-                        .collect();
+                        .for_each(|d| n[d as usize] = true);
+                    life_config.birth = n;
                 }
             });
             ui.horizontal(|ui| {
                 ui.label("Survival:");
                 let response = ui.text_edit_singleline(&mut ui_state.survival);
                 if response.changed() {
-                    life_config.survival = ui_state
+                    let mut n = [false, false, false, false, false, false, false, false];
+                    ui_state
                         .survival
                         .chars()
                         .filter_map(|c| c.to_digit(10))
-                        .collect();
+                        .for_each(|d| n[d as usize] = true);
+                    life_config.survival = n;
+                    // life_config.survival = ui_state
+                    //     .survival
+                    //     .chars()
+                    //     .filter_map(|c| c.to_digit(10))
+                    //     .collect();
                 }
             });
 

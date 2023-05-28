@@ -274,7 +274,7 @@ pub struct TreeConfig {
 impl Plugin for TreePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TreeConfig {
-            levels: 5,
+            levels: 6,
             meta_tile: MetaTileType::H,
         })
         .add_system(background_polygons);
@@ -342,35 +342,58 @@ fn background_polygons(
 
         make_polygons(
             &mut polys,
-            Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
+            // Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
+            Affine2::IDENTITY,
             &mtt,
         );
 
         commands.insert_resource(MetaTileTree(mtt));
         // std::process::exit(0);
+        if false {
+            for (i, shape) in [
+                TileType::H1Hat,
+                TileType::HHat,
+                TileType::THat,
+                TileType::FHat,
+                TileType::PHat,
+            ]
+            .iter()
+            .enumerate()
+            {
+                let polys = match shape {
+                    TileType::H1Hat => &polys.h1,
+                    TileType::HHat => &polys.h,
+                    TileType::THat => &polys.t,
+                    TileType::PHat => &polys.p,
+                    TileType::FHat => &polys.f,
+                    _ => panic!(),
+                };
+                for chunk in polys.chunks(500_000) {
+                    let mut g = GeometryBuilder::new();
+                    for tile in chunk {
+                        g = g.add(tile);
+                    }
 
-        for (i, shape) in [
-            TileType::H1Hat,
-            TileType::HHat,
-            TileType::THat,
-            TileType::FHat,
-            TileType::PHat,
-        ]
-        .iter()
-        .enumerate()
-        {
-            let polys = match shape {
-                TileType::H1Hat => &polys.h1,
-                TileType::HHat => &polys.h,
-                TileType::THat => &polys.t,
-                TileType::PHat => &polys.p,
-                TileType::FHat => &polys.f,
-                _ => panic!(),
-            };
-            for chunk in polys.chunks(500_000) {
+                    // std::process::exit(0);
+
+                    commands.spawn((
+                        ShapeBundle {
+                            path: g.build(),
+                            transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
+                            ..default()
+                        },
+                        // Fill::color(shape_to_fill_color(*shape)),
+                        Stroke::new(STROKE_COLOR, STROKE_WIDTH),
+                        DeadCells,
+                    ));
+                }
+            }
+
+            // if false {
+            for (i, outlines) in polys.meta.iter().enumerate() {
                 let mut g = GeometryBuilder::new();
-                for tile in chunk {
-                    g = g.add(tile);
+                for outline in outlines {
+                    g = g.add(outline);
                 }
 
                 // std::process::exit(0);
@@ -378,38 +401,18 @@ fn background_polygons(
                 commands.spawn((
                     ShapeBundle {
                         path: g.build(),
-                        transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
+                        transform: Transform::from_xyz(0.0, 0.0, 0.1),
                         ..default()
                     },
-                    // Fill::color(shape_to_fill_color(*shape)),
-                    Stroke::new(STROKE_COLOR, STROKE_WIDTH),
+                    Stroke::new(
+                        Color::rgba(0.0, 0.0, 0.0, 0.1),
+                        STROKE_WIDTH * 1.5_f32.powi(i as i32),
+                    ),
                     DeadCells,
                 ));
             }
+            // }
         }
-
-        // if false {
-        for (i, outlines) in polys.meta.iter().enumerate() {
-            let mut g = GeometryBuilder::new();
-            for outline in outlines {
-                g = g.add(outline);
-            }
-
-            // std::process::exit(0);
-
-            commands.spawn((
-                ShapeBundle {
-                    path: g.build(),
-                    transform: Transform::from_xyz(0.0, 0.0, 0.1),
-                    ..default()
-                },
-                Stroke::new(
-                    Color::rgba(0.0, 0.0, 0.0, 0.1),
-                    STROKE_WIDTH * 1.5_f32.powi(i as i32),
-                ),
-            ));
-        }
-        // }
     }
 }
 type HatPoints = Vec<shapes::Polygon>;

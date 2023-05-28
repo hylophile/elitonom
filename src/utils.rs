@@ -31,13 +31,13 @@ pub fn rot_about(p: Vec2, angle: f32) -> Affine2 {
 }
 
 pub fn intersect(p1: Vec2, q1: Vec2, p2: Vec2, q2: Vec2) -> Vec2 {
-    let d = (q2.y - p2.y) * (q1.x - p1.x) - (q2.x - p2.x) * (q1.y - p1.y);
-    let u_a = ((q2.x - p2.x) * (p1.y - p2.y) - (q2.y - p2.y) * (p1.x - p2.x)) / d;
+    let d = (q2.y - p2.y).mul_add(q1.x - p1.x, -(q2.x - p2.x) * (q1.y - p1.y));
+    let u_a = (q2.x - p2.x).mul_add(p1.y - p2.y, -(q2.y - p2.y) * (p1.x - p2.x)) / d;
     // const uB =
     //   ((q1.x - p1.x) * (p1.y - p2.y) - (q1.y - p1.y) * (p1.x - p2.x)) / d;
 
     Vec2 {
-        x: p1.x + u_a * (q1.x - p1.x),
-        y: p1.y + u_a * (q1.y - p1.y),
+        x: u_a.mul_add(q1.x - p1.x, p1.x),
+        y: u_a.mul_add(q1.y - p1.y, p1.y),
     }
 }

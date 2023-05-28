@@ -1,8 +1,10 @@
 // use bevy::ecs::schedule::ShouldRun;
 use bevy::{math::Affine2, prelude::*};
 
-use kiddo::{distance::squared_euclidean, KdTree};
+use kiddo::distance::squared_euclidean;
+use kiddo::float::kdtree::KdTree;
 
+pub type Kdt = kiddo::float::kdtree::KdTree<f32, usize, 2, 64, u32>;
 use std::ops::Mul;
 
 use crate::constants::CAP;
@@ -14,7 +16,7 @@ use crate::{
 use super::noise::AddNoiseEvent;
 
 #[derive(Resource)]
-pub struct MetaTileKdTree(pub KdTree<f32, 2>);
+pub struct MetaTileKdTree(pub Kdt);
 
 #[derive(Resource)]
 pub struct Affines(pub Vec<Affine2>);
@@ -35,7 +37,7 @@ impl LifeState {
 pub struct AliveCells;
 
 fn touching(a: Affine2, b: Affine2) -> bool {
-    let eps = 0.1;
+    let eps = 0.01;
     let pa = HAT_OUTLINE.iter().map(|p| a.transform_point2(*p));
     let pb = HAT_OUTLINE.iter().map(|p| b.transform_point2(*p));
     for p in pa {
@@ -51,7 +53,7 @@ fn touching(a: Affine2, b: Affine2) -> bool {
     false
 }
 
-fn neighbors(kdtree: &KdTree<f32, 2>, affines: &[Affine2], idx: usize) -> Vec<usize> {
+fn neighbors(kdtree: &Kdt, affines: &[Affine2], idx: usize) -> Vec<usize> {
     let n = 20;
     let mut ns: Vec<usize> = Vec::with_capacity(n);
 
@@ -98,16 +100,16 @@ pub fn init_life(mut evt: EventWriter<AddNoiseEvent>) {
 
 /// .
 pub fn gen_neighbors(mut commands: Commands, mtt: Option<Res<MetaTileTree>>) {
-    if mtt.is_some() {
-        let mtt = mtt.unwrap();
+    if let Some(mtt) = mtt {
         if mtt.is_added() || mtt.is_changed() {
             let mut affines = Vec::with_capacity(CAP);
             make_affines(
                 &mut affines,
-                Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
+                // Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
+                Affine2::IDENTITY,
                 &mtt.0,
             );
-            let mut kdtree: KdTree<f32, 2> = KdTree::with_capacity(affines.len());
+            let mut kdtree: Kdt = KdTree::with_capacity(affines.len());
 
             affines
                 .iter()

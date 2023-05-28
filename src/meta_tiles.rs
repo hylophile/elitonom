@@ -30,7 +30,6 @@ pub struct MetaTile {
 }
 use std::fmt;
 impl fmt::Display for MetaTile {
-    // This trait requires `fmt` with this exact signature.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "--\n{:?}\n", self.shape)?;
         writeln!(f, "{:?}", self.transform)?;
@@ -40,52 +39,14 @@ impl fmt::Display for MetaTile {
 }
 
 impl MetaTile {
-    // pub fn new(transform: Affine2, shape: TileType, width: usize, outline: Vec<Vec2>) -> Self {
-    //     Self {
-    //         transform,
-    //         shape,
-    //         width,
-    //         outline,
-    //         children: Vec::new(),
-    //     }
-    // }
-
-    pub fn push(self: &mut MetaTile, mt: MetaTile) {
+    pub fn push(&mut self, mt: Self) {
         self.children.push(Arc::new(mt))
     }
 
-    pub fn push_rc(self: &mut MetaTile, mt: Arc<MetaTile>) {
+    pub fn push_rc(&mut self, mt: Arc<Self>) {
         self.children.push(mt)
     }
 }
-
-// 0  Vec2::new(0.0, 0.0),
-// 1  Vec2::new(-1.5, -0.5 * SQ3),
-// 2  Vec2::new(-1.0, -SQ3),
-// 3  Vec2::new(1.0, -SQ3),
-// 4  Vec2::new(1.5, -0.5 * SQ3),
-// 5  Vec2::new(3.0, -SQ3),
-// 6  Vec2::new(4.5, -0.5 * SQ3),
-// 7  Vec2::new(4.0, 0.0),
-// 8  Vec2::new(3.0, 0.0),
-// 9  Vec2::new(3.0, SQ3),
-// 10 Vec2::new(1.5, 1.5 * SQ3),
-// 11 Vec2::new(1.0, SQ3),
-// 12 Vec2::new(0.0, SQ3),
-
-// [0.0, 0.0, 0.0],
-// [-1.5, -0.5 * SQ3, 0.0],
-// [-1.0, -SQ3, 0.0],
-// [1.0, -SQ3, 0.0],
-// [1.5, -0.5 * SQ3, 0.0],
-// [3.0, -SQ3, 0.0],
-// [4.5, -0.5 * SQ3, 0.0],
-// [4.0, 0.0, 0.0],
-// [3.0, 0.0, 0.0],
-// [3.0, SQ3, 0.0],
-// [1.5, 1.5 * SQ3, 0.0],
-// [1.0, SQ3, 0.0],
-// [0.0, SQ3, 0.0],
 
 pub const HAT_OUTLINE: &[Vec2] = &[
     Vec2::new(0.0, 0.0),
