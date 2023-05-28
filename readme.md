@@ -11,9 +11,10 @@ cargo run --release
 - Standard /Game of Life/ rules are set in the UI on startup
 
 # Fun rules to try
+- **B: 3 / S: 234** (forms resilient hexagons; add 5 and/or 6 to Survival for more stability)
+- Fill all cells, then B356/S0123456 
 - B: 2 / S: 3
 - B: 2 / S: 34
 - B: 24 / S: 
 - B: 34 / S: 124
 - B: 2 / S: 2345
-- **B: 3 / S: 234** (forms resilient crystals; add 5 and/or 6 to Survival for more stability)
