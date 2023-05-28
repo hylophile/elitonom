@@ -12,9 +12,6 @@ pub static STROKE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 1.0);
 
 pub static BG_COLOR: Color = Color::rgb(1.0, 1.0, 1.0);
 
-pub const STROKE_WIDTH: f32 = 0.5;
+pub const STROKE_WIDTH: f32 = 0.1;
 
 pub const CAP: usize = 200_000;
-
-pub const FIXED_TIMESTEP: f32 = 0.25;
-pub const LEVELS: usize = 0;
