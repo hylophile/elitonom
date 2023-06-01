@@ -33,6 +33,14 @@ impl LifeState {
     }
 }
 
+#[derive(Resource)]
+pub struct MeshAttributes {
+    pub positions: Vec<[f32; 3]>,
+    pub indices: Vec<u32>,
+    pub normals: Vec<[f32; 3]>,
+    pub uvs: Vec<[f32; 2]>,
+}
+
 #[derive(Component)]
 pub struct AliveCells;
 
@@ -95,7 +103,7 @@ fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &MetaTile) {
 }
 
 pub fn init_life(mut evt: EventWriter<AddNoiseEvent>) {
-    evt.send(AddNoiseEvent);
+    // evt.send(AddNoiseEvent);
 }
 
 /// .
@@ -129,6 +137,12 @@ pub fn gen_neighbors(mut commands: Commands, mtt: Option<Res<MetaTileTree>>) {
 
             commands.insert_resource(life_state);
             // commands.insert_resource(MetaTileKdTree(kdtree));
+            commands.insert_resource(MeshAttributes {
+                positions: Vec::with_capacity(affines.len()),
+                indices: Vec::with_capacity(affines.len()),
+                uvs: Vec::with_capacity(affines.len()),
+                normals: Vec::with_capacity(affines.len()),
+            });
             commands.insert_resource(Affines(affines));
             commands.insert_resource(HatNeighbors(neighbors));
         }

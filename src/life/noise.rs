@@ -11,22 +11,23 @@ use rand::Rng;
 
 use crate::constants::CAP;
 
-use super::init::{Affines, AliveCells, LifeState};
+use super::init::{Affines, AliveCells, LifeState, MeshAttributes};
 use super::step::hatsmesh;
 use super::LifeConfig;
 
 pub fn add_noise(
     mut commands: Commands,
-    (mut meshes, mut materials, life_state): (
+    (mut meshes, mut materials, mut ma, life_state): (
         ResMut<Assets<Mesh>>,
         ResMut<Assets<ColorMaterial>>,
+        Option<ResMut<MeshAttributes>>,
         Option<ResMut<LifeState>>,
     ),
     (life_config, affines): (Res<LifeConfig>, Option<Res<Affines>>),
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<AddNoiseEvent>,
 ) {
-    if let (Some(affines), Some(mut life_state)) = (affines, life_state) {
+    if let (Some(affines), Some(mut life_state), Some(mut ma)) = (affines, life_state, ma) {
         for _ in evts.iter() {
             for c in cells.iter() {
                 commands.entity(c).despawn();
@@ -50,7 +51,7 @@ pub fn add_noise(
 
             // dbg!(&life_state);
 
-            let hatss = hatsmesh(&ne, &affines.0);
+            let hatss = hatsmesh(&mut ma, &ne, &affines.0);
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(hatss).into(),
@@ -67,16 +68,17 @@ pub fn add_noise(
 
 pub fn remove_noise(
     mut commands: Commands,
-    (mut meshes, mut materials, life_state): (
+    (mut meshes, mut materials, mut ma, life_state): (
         ResMut<Assets<Mesh>>,
         ResMut<Assets<ColorMaterial>>,
+        Option<ResMut<MeshAttributes>>,
         Option<ResMut<LifeState>>,
     ),
     (life_config, affines): (Res<LifeConfig>, Option<Res<Affines>>),
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<RemoveNoiseEvent>,
 ) {
-    if let (Some(affines), Some(mut life_state)) = (affines, life_state) {
+    if let (Some(affines), Some(mut life_state), Some(mut ma)) = (affines, life_state, ma) {
         for _ in evts.iter() {
             for c in cells.iter() {
                 if let Some(mut e) = commands.get_entity(c) {
@@ -102,7 +104,7 @@ pub fn remove_noise(
 
             // dbg!(&life_state);
 
-            let hatss = hatsmesh(&ne, &affines.0);
+            let hatss = hatsmesh(&mut ma, &ne, &affines.0);
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(hatss).into(),

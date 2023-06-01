@@ -8,7 +8,7 @@ use bevy_prototype_lyon::prelude::*;
 
 use crate::meta_tiles::HAT_OUTLINE;
 
-use super::init::{Affines, AliveCells, HatNeighbors, LifeState};
+use super::init::{Affines, AliveCells, HatNeighbors, LifeState, MeshAttributes};
 
 use super::{LifeConfig, StepTimer};
 
@@ -24,26 +24,30 @@ static IND: [u32; 24] = [
     5,  7,  8,
 ];
 
-pub fn hatsmesh(idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
-    let mut vertices = Vec::with_capacity(affines.len());
-    vertices.extend(idxs.iter().flat_map(|id| {
+pub fn hatsmesh(ma: &mut MeshAttributes, idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
+    // let mut vertices = Vec::with_capacity(affines.len());
+    ma.positions.clear();
+    ma.positions.extend(idxs.iter().flat_map(|id| {
         HAT_OUTLINE.iter().map(|p| {
             let p2 = affines[*id].transform_point2(*p);
             [p2.x, p2.y, 0.0]
         })
     }));
 
-    let mut is: Vec<u32> = Vec::with_capacity(IND.len() * idxs.len());
-    is.extend((0..idxs.len() as u32).flat_map(|j| IND.iter().map(move |i| i + j * 13)));
-    let indices = Indices::U32(is);
+    // let mut is: Vec<u32> = Vec::with_capacity(IND.len() * idxs.len());
+    ma.indices.clear();
+    ma.indices
+        .extend((0..idxs.len() as u32).flat_map(|j| IND.iter().map(move |i| i + j * 13)));
+    let ma = &ma;
+    let indices = Indices::U32((*ma.indices).to_vec());
 
-    let positions: Vec<_> = vertices.clone();
-    let normals: Vec<_> = vertices.iter().map(|_| [0.0, 0.0, 1.0]).collect();
-    let uvs: Vec<_> = vertices.iter().map(|_| [1.0, 0.0]).collect();
+    // let positions: &Vec<_> = &ma.positions;
+    let normals: Vec<_> = ma.positions.iter().map(|_| [0.0, 0.0, 1.0]).collect();
+    let uvs: Vec<_> = ma.positions.iter().map(|_| [1.0, 0.0]).collect();
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     mesh.set_indices(Some(indices));
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, (*ma.positions).to_vec());
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
     mesh
@@ -53,6 +57,7 @@ pub fn _spawn_idxs(
     commands: &mut Commands,
     _meshes: ResMut<Assets<Mesh>>,
     _materials: ResMut<Assets<ColorMaterial>>,
+    ma: Res<MeshAttributes>,
     affines: &[Affine2],
     idxs: &Vec<usize>,
 ) {
@@ -83,11 +88,12 @@ pub fn _spawn_idxs(
 
 pub fn step_life(
     mut commands: Commands,
-    (mut meshes, mut materials, mut life_state, mut step_timer): (
+    (mut meshes, mut materials, mut life_state, mut step_timer, mut ma): (
         ResMut<Assets<Mesh>>,
         ResMut<Assets<ColorMaterial>>,
         ResMut<LifeState>,
         ResMut<StepTimer>,
+        ResMut<MeshAttributes>,
     ),
     (life_config, neighbors, affines, time): (
         Res<LifeConfig>,
@@ -116,7 +122,7 @@ pub fn step_life(
                 ne.push(i);
             }
         }
-        let hatss = hatsmesh(&ne, &affines.0);
+        let hatss = hatsmesh(&mut ma, &ne, &affines.0);
         commands.spawn((
             MaterialMesh2dBundle {
                 mesh: meshes.add(hatss).into(),
