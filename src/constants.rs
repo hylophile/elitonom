@@ -15,3 +15,5 @@ pub static BG_COLOR: Color = Color::rgb(1.0, 1.0, 1.0);
 pub const STROKE_WIDTH: f32 = 0.1;
 
 pub const CAP: usize = 200_000;
+
+pub const LEVELS: usize = 6;
