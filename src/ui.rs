@@ -124,6 +124,7 @@ fn ui_system(
                         .birth
                         .chars()
                         .filter_map(|c| c.to_digit(10))
+                        .filter(|x| x < &8)
                         .for_each(|d| n[d as usize] = true);
                     life_config.birth = n;
                 }
@@ -137,6 +138,7 @@ fn ui_system(
                         .survival
                         .chars()
                         .filter_map(|c| c.to_digit(10))
+                        .filter(|x| x < &8)
                         .for_each(|d| n[d as usize] = true);
                     life_config.survival = n;
                     // life_config.survival = ui_state
