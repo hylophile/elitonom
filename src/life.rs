@@ -1,8 +1,10 @@
+pub mod draw;
 pub mod init;
 pub mod noise;
 pub mod step;
 
 use self::{
+    draw::draw,
     init::{gen_neighbors, init_life},
     noise::{add_noise, remove_noise, AddNoiseEvent, RemoveNoiseEvent},
     step::step_life,
@@ -47,7 +49,8 @@ impl Plugin for LifePlugin {
             .add_startup_system(init_life.in_base_set(PostStartup))
             .add_system(add_noise)
             .add_system(remove_noise)
-            .add_system(step_life.run_if(life_running));
+            .add_system(step_life.run_if(life_running))
+            .add_system(draw);
         // .add_system(
         //     step_life
         //         .run_if(life_running)
