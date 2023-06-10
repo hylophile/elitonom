@@ -4,7 +4,11 @@ use bevy::{math::Affine2, prelude::*};
 use kiddo::distance::squared_euclidean;
 use kiddo::float::kdtree::KdTree;
 
-pub type Kdt = kiddo::float::kdtree::KdTree<f32, usize, 2, 64, u32>;
+// #[cfg(not(target_arch = "wasm32"))]
+// pub type Kdt = kiddo::float::kdtree::KdTree<f32, usize, 2, 64, u32>;
+// #[cfg(target_arch = "wasm32")]
+pub type Kdt = kiddo::float::kdtree::KdTree<f32, u32, 2, 64, u16>;
+
 use std::ops::Mul;
 
 use crate::constants::CAP;
@@ -55,7 +59,7 @@ fn touching(a: Affine2, b: Affine2) -> bool {
 
 fn neighbors(kdtree: &Kdt, affines: &[Affine2], idx: usize) -> Vec<usize> {
     let n = 20;
-    let mut ns: Vec<usize> = Vec::with_capacity(n);
+    let mut ns: Vec<_> = Vec::with_capacity(n);
 
     // let _t: Vec<_> = kdtree
     //     .nearest_n(&[0.0, 0.0], n, &squared_euclidean)
@@ -67,11 +71,11 @@ fn neighbors(kdtree: &Kdt, affines: &[Affine2], idx: usize) -> Vec<usize> {
     kdtree
         .nearest_n(oa.translation.as_ref(), n, &squared_euclidean)
         .into_iter()
-        .filter(|n| touching(oa, affines[n.item]))
+        .filter(|n| touching(oa, affines[n.item as usize]))
         // .filter(|n| n.distance < 80.0)
-        .filter(|n| n.item != idx)
+        .filter(|n| n.item as usize != idx)
         .for_each(|neighbor| {
-            ns.push(neighbor.item);
+            ns.push(neighbor.item as usize);
             // dbg!(neighbor.distance);
         });
     ns
@@ -114,7 +118,7 @@ pub fn gen_neighbors(mut commands: Commands, mtt: Option<Res<MetaTileTree>>) {
             affines
                 .iter()
                 .enumerate()
-                .for_each(|(idx, a)| kdtree.add(a.translation.as_ref(), idx));
+                .for_each(|(idx, a)| kdtree.add(a.translation.as_ref(), idx as u32));
 
             let life_state = LifeState {
                 // old: Vec::with_capacity(CAP),
@@ -128,7 +132,7 @@ pub fn gen_neighbors(mut commands: Commands, mtt: Option<Res<MetaTileTree>>) {
                 .collect();
 
             commands.insert_resource(life_state);
-            // commands.insert_resource(MetaTileKdTree(kdtree));
+            commands.insert_resource(MetaTileKdTree(kdtree));
             commands.insert_resource(Affines(affines));
             commands.insert_resource(HatNeighbors(neighbors));
         }
