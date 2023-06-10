@@ -28,7 +28,10 @@ fn setup(
             },
             ..default()
         })
-        .insert(bevy_pancam::PanCam::default());
+        .insert(bevy_pancam::PanCam {
+            grab_buttons: vec![MouseButton::Right],
+            ..default()
+        });
 }
 
 fn main() {
