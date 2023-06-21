@@ -18,7 +18,7 @@ use crate::constants::CAP;
 
 use super::init::{Affines, AliveCells, LifeState};
 use super::step::hatsmesh;
-use super::LifeConfig;
+
 
 pub fn add_noise(
     mut commands: Commands,
@@ -27,7 +27,7 @@ pub fn add_noise(
         ResMut<Assets<ColorMaterial>>,
         Option<ResMut<LifeState>>,
     ),
-    (affines): (Option<Res<Affines>>),
+    affines: Option<Res<Affines>>,
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<AddNoiseEvent>,
 ) {
@@ -77,7 +77,7 @@ pub fn remove_noise(
         ResMut<Assets<ColorMaterial>>,
         Option<ResMut<LifeState>>,
     ),
-    (affines): (Option<Res<Affines>>),
+    affines: Option<Res<Affines>>,
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<RemoveNoiseEvent>,
 ) {
