@@ -87,7 +87,9 @@ fn ui_system(
 
             ui.horizontal(|ui| {
                 if ui.button("Add Noise").clicked() {
-                    evt1.send(AddNoiseEvent);
+                    evt1.send(AddNoiseEvent {
+                        fraction: life_config.add_noise_percent,
+                    });
                 }
                 let response = ui.text_edit_singleline(&mut ui_state.add_noise_percent);
                 if response.changed() {
@@ -95,14 +97,16 @@ fn ui_system(
                         .add_noise_percent
                         .parse::<f32>()
                         .map(|f| f / 100.0)
-                        .unwrap_or(0.15);
+                        .unwrap_or(0.1);
                 }
                 ui.label("%");
             });
 
             ui.horizontal(|ui| {
                 if ui.button("Remove Noise").clicked() {
-                    evt2.send(RemoveNoiseEvent);
+                    evt2.send(RemoveNoiseEvent {
+                        fraction: life_config.remove_noise_percent,
+                    });
                 }
                 let response = ui.text_edit_singleline(&mut ui_state.remove_noise_percent);
                 if response.changed() {
@@ -110,7 +114,7 @@ fn ui_system(
                         .remove_noise_percent
                         .parse::<f32>()
                         .map(|f| f / 100.0)
-                        .unwrap_or(0.15);
+                        .unwrap_or(0.1);
                 }
                 ui.label("%");
             });

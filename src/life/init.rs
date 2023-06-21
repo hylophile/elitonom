@@ -99,7 +99,7 @@ fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &MetaTile) {
 }
 
 pub fn init_life(mut evt: EventWriter<AddNoiseEvent>) {
-    evt.send(AddNoiseEvent);
+    // evt.send(AddNoiseEvent);
 }
 
 /// .

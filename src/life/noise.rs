@@ -1,7 +1,12 @@
 use bevy::prelude::*;
 
-pub struct AddNoiseEvent;
-pub struct RemoveNoiseEvent;
+pub struct AddNoiseEvent {
+    pub fraction: f32,
+}
+
+pub struct RemoveNoiseEvent {
+    pub fraction: f32,
+}
 
 // use bevy::ecs::schedule::ShouldRun;
 
@@ -22,12 +27,12 @@ pub fn add_noise(
         ResMut<Assets<ColorMaterial>>,
         Option<ResMut<LifeState>>,
     ),
-    (life_config, affines): (Res<LifeConfig>, Option<Res<Affines>>),
+    (affines): (Option<Res<Affines>>),
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<AddNoiseEvent>,
 ) {
     if let (Some(affines), Some(mut life_state)) = (affines, life_state) {
-        for _ in evts.iter() {
+        for evt in evts.iter() {
             for c in cells.iter() {
                 commands.entity(c).despawn();
             }
@@ -40,7 +45,7 @@ pub fn add_noise(
             for idx in 0..affines.0.len() {
                 let t: f32 = rng.gen();
 
-                if t < life_config.add_noise_percent {
+                if t < evt.fraction {
                     life_state.new[idx] = true;
                 }
                 if life_state.new[idx] {
@@ -72,12 +77,12 @@ pub fn remove_noise(
         ResMut<Assets<ColorMaterial>>,
         Option<ResMut<LifeState>>,
     ),
-    (life_config, affines): (Res<LifeConfig>, Option<Res<Affines>>),
+    (affines): (Option<Res<Affines>>),
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<RemoveNoiseEvent>,
 ) {
     if let (Some(affines), Some(mut life_state)) = (affines, life_state) {
-        for _ in evts.iter() {
+        for evt in evts.iter() {
             for c in cells.iter() {
                 if let Some(mut e) = commands.get_entity(c) {
                     e.despawn()
@@ -92,7 +97,7 @@ pub fn remove_noise(
             for idx in 0..affines.0.len() {
                 let t: f32 = rng.gen();
 
-                if t < life_config.remove_noise_percent {
+                if t < evt.fraction {
                     life_state.new[idx] = false;
                 }
                 if life_state.new[idx] {
