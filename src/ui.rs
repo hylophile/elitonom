@@ -20,6 +20,7 @@ struct UIState {
     meta_tile: MetaTileType,
     add_noise_percent: String,
     remove_noise_percent: String,
+    stroke_width: String,
 }
 
 impl Plugin for UIPlugin {
@@ -31,6 +32,7 @@ impl Plugin for UIPlugin {
             // levels: "5".to_string(),
             add_noise_percent: "10".to_string(),
             remove_noise_percent: "10".to_string(),
+            stroke_width: "1".to_string(),
             meta_tile: MetaTileType::H,
         })
         .add_plugin(EguiPlugin)
@@ -111,6 +113,15 @@ fn ui_system(
                         .unwrap_or(0.15);
                 }
                 ui.label("%");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Stroke width:");
+                if ui
+                    .text_edit_singleline(&mut ui_state.stroke_width)
+                    .changed()
+                {
+                    life_config.stroke_width = ui_state.stroke_width.parse::<usize>().unwrap_or(1)
+                }
             });
 
             ui.separator();

@@ -21,6 +21,7 @@ pub struct LifeConfig {
     pub update_interval: f32,
     pub add_noise_percent: f32,
     pub remove_noise_percent: f32,
+    pub stroke_width: usize,
 }
 
 #[derive(Resource, Debug)]
@@ -39,6 +40,7 @@ impl Plugin for LifePlugin {
                 update_interval,
                 add_noise_percent: 0.1,
                 remove_noise_percent: 0.1,
+                stroke_width: 1,
             })
             .insert_resource(StepTimer(Timer::from_seconds(
                 update_interval,

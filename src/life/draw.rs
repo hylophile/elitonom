@@ -3,22 +3,26 @@ use kiddo::distance::squared_euclidean;
 
 use crate::life::{init::AliveCells, step::hatsmesh};
 
-use super::init::{Affines, LifeState, MetaTileKdTree}; //, render::camera::RenderTarget};
+use super::{
+    init::{Affines, LifeState, MetaTileKdTree},
+    LifeConfig,
+}; //, render::camera::RenderTarget};
 
 pub fn draw(
     mut commands: Commands,
     // need to get window dimensions
     windows: Query<&Window>,
 
-    (mut meshes, mut materials, mut life_state): (
+    (mut meshes, mut materials, life_state): (
         ResMut<Assets<Mesh>>,
         ResMut<Assets<ColorMaterial>>,
         Option<ResMut<LifeState>>,
     ),
-    (buttons, affines, kdtree): (
+    (buttons, affines, kdtree, life_config): (
         Res<Input<MouseButton>>,
         Option<Res<Affines>>,
         Option<Res<MetaTileKdTree>>,
+        Res<LifeConfig>,
     ),
     // query to get camera transform
     camera_q: Query<(&Camera, &GlobalTransform)>,
@@ -37,8 +41,13 @@ pub fn draw(
                 {
                     let ne = kdtree
                         .0
-                        .nearest_n(world_position.as_ref(), 1, &squared_euclidean)
+                        .nearest_n(
+                            world_position.as_ref(),
+                            life_config.stroke_width,
+                            &squared_euclidean,
+                        )
                         .into_iter()
+                        .filter(|ne| ne.distance < life_config.stroke_width as f32)
                         .map(|ne| {
                             life_state.new[ne.item as usize] = true;
                             ne.item as usize
