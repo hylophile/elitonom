@@ -86,6 +86,15 @@ fn ui_system(
             ui.separator();
 
             ui.horizontal(|ui| {
+                if ui.button("Fill").clicked() {
+                    evt1.send(AddNoiseEvent { fraction: 1.01 });
+                };
+                if ui.button("Clear").clicked() {
+                    evt2.send(RemoveNoiseEvent { fraction: 1.01 });
+                };
+            });
+
+            ui.horizontal(|ui| {
                 if ui.button("Add Noise").clicked() {
                     evt1.send(AddNoiseEvent {
                         fraction: life_config.add_noise_percent,
