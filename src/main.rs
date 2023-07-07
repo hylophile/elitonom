@@ -39,7 +39,14 @@ fn main() {
         // .insert_resource(Msaa::Sample4)
         // .insert_resource(ClearColor(Color::rgb(0.8,0.8,0.8)))
         // .insert_resource(ClearColor(Color::rgb(0.8,0.8,0.8)))
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Aperiodic Game of Life".to_string(),
+                fit_canvas_to_parent: true,
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugin(PanCamPlugin::default())
         .add_plugin(ShapePlugin)
         // .add_plugin(WorldInspectorPlugin::new())
