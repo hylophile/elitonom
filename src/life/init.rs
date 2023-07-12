@@ -13,8 +13,8 @@ use std::ops::Mul;
 
 use crate::constants::CAP;
 use crate::{
-    meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
     tree::hat::MetaTileTree,
+    tree::hat_meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
 };
 
 use super::noise::AddNoiseEvent;

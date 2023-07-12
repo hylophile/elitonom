@@ -1,4 +1,5 @@
 pub mod hat;
+pub mod hat_meta_tiles;
 
 use crate::{constants::LEVELS, life::init::AliveCells};
 use bevy::prelude::*;

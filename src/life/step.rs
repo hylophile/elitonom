@@ -6,7 +6,7 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy::{math::Affine2, prelude::*};
 use bevy_prototype_lyon::prelude::*;
 
-use crate::meta_tiles::HAT_OUTLINE;
+use crate::tree::hat_meta_tiles::HAT_OUTLINE;
 
 use super::init::{Affines, AliveCells, HatNeighbors, LifeState};
 
