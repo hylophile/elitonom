@@ -17,6 +17,7 @@ struct UIState {
     survival: String,
     update_interval: String,
     // levels: String,
+    spectre: bool,
     meta_tile: HatMetaTileType,
     add_noise_percent: String,
     remove_noise_percent: String,
@@ -31,6 +32,7 @@ impl Plugin for UIPlugin {
             update_interval: "0.01".to_string(),
             // levels: "5".to_string(),
             add_noise_percent: "10".to_string(),
+            spectre: true,
             remove_noise_percent: "10".to_string(),
             stroke_width: "1".to_string(),
             meta_tile: HatMetaTileType::H,
@@ -81,6 +83,28 @@ fn ui_system(
                     }
                 }
                 ui.label("s");
+            });
+
+            ui.separator();
+
+            ui.label("Shape");
+
+            ui.horizontal(|ui| {
+                if ui
+                    .radio_value(&mut ui_state.spectre, true, "Spectre")
+                    .clicked()
+                {
+                    ui_state.spectre = true;
+                    tree_config.spectre = true;
+                };
+
+                if ui
+                    .radio_value(&mut ui_state.spectre, false, "Hat")
+                    .clicked()
+                {
+                    ui_state.spectre = false;
+                    tree_config.spectre = false;
+                };
             });
 
             ui.separator();
