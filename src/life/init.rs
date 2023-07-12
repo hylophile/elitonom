@@ -14,7 +14,7 @@ use std::ops::Mul;
 use crate::constants::CAP;
 use crate::{
     meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
-    tree::MetaTileTree,
+    tree::hat::MetaTileTree,
 };
 
 use super::noise::AddNoiseEvent;
@@ -98,7 +98,7 @@ fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &MetaTile) {
     }
 }
 
-pub fn init_life(mut evt: EventWriter<AddNoiseEvent>) {
+pub fn init_life(_evt: EventWriter<AddNoiseEvent>) {
     // evt.send(AddNoiseEvent);
 }
 

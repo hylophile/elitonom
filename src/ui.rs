@@ -6,7 +6,7 @@ use crate::{
         noise::{AddNoiseEvent, RemoveNoiseEvent},
         LifeConfig, StepTimer,
     },
-    tree::{MetaTileType, TreeConfig},
+    tree::{hat::MetaTileType, TreeConfig},
 };
 
 pub struct UIPlugin;
