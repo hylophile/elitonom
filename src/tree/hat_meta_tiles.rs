@@ -8,7 +8,7 @@ const SQ3: f32 = 1.732_050_8; // sqrt(3)
 const HR3: f32 = 0.866_025_4; // sqrt(3) / 2
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TileType {
+pub enum HatTileType {
     H,
     T,
     P,
@@ -21,15 +21,15 @@ pub enum TileType {
 }
 
 #[derive(Debug, Clone)]
-pub struct MetaTile {
+pub struct HatMetaTile {
     pub transform: Affine2,
-    pub shape: TileType,
+    pub shape: HatTileType,
     pub outline: Vec<Vec2>,
     pub width: usize,
-    pub children: Vec<Arc<MetaTile>>,
+    pub children: Vec<Arc<HatMetaTile>>,
 }
 use std::fmt;
-impl fmt::Display for MetaTile {
+impl fmt::Display for HatMetaTile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "--\n{:?}\n", self.shape)?;
         writeln!(f, "{:?}", self.transform)?;
@@ -38,7 +38,7 @@ impl fmt::Display for MetaTile {
     }
 }
 
-impl MetaTile {
+impl HatMetaTile {
     pub fn push(&mut self, mt: Self) {
         self.children.push(Arc::new(mt))
     }
@@ -73,47 +73,47 @@ const H_OUTLINE: &[Vec2] = &[
     Vec2::new(-0.5, HR3),
 ];
 
-pub fn h_init() -> MetaTile {
-    let mut h = MetaTile {
+pub fn h_init() -> HatMetaTile {
+    let mut h = HatMetaTile {
         transform: Affine2::IDENTITY,
-        shape: TileType::H,
+        shape: HatTileType::H,
         width: 2,
         outline: H_OUTLINE.to_vec(),
         children: Vec::new(),
     };
 
-    h.push_rc(Arc::new(MetaTile {
+    h.push_rc(Arc::new(HatMetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[5], H_OUTLINE[0]),
-        shape: TileType::HHat,
+        shape: HatTileType::HHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Arc::new(MetaTile {
+    h.push_rc(Arc::new(HatMetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[9], HAT_OUTLINE[11], H_OUTLINE[1], H_OUTLINE[2]),
-        shape: TileType::HHat,
+        shape: HatTileType::HHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Arc::new(MetaTile {
+    h.push_rc(Arc::new(HatMetaTile {
         children: Vec::new(),
         transform: match_two(HAT_OUTLINE[5], HAT_OUTLINE[7], H_OUTLINE[3], H_OUTLINE[4]),
-        shape: TileType::HHat,
+        shape: HatTileType::HHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     }));
 
-    h.push_rc(Arc::new(MetaTile {
+    h.push_rc(Arc::new(HatMetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[
             [-0.25, 0.5 * HR3],
             [0.5 * HR3, 0.25],
             [2.5, HR3],
         ]),
-        shape: TileType::H1Hat,
+        shape: HatTileType::H1Hat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     }));
@@ -127,19 +127,19 @@ const T_OUTLINE: &[Vec2] = &[
     Vec2::new(1.5, 3.0 * HR3),
 ];
 
-pub fn t_init() -> MetaTile {
-    let mut t = MetaTile {
+pub fn t_init() -> HatMetaTile {
+    let mut t = HatMetaTile {
         children: Vec::new(),
         transform: Affine2::IDENTITY,
-        shape: TileType::T,
+        shape: HatTileType::T,
         width: 2,
         outline: T_OUTLINE.to_vec(),
     };
 
-    t.push_rc(Arc::new(MetaTile {
+    t.push_rc(Arc::new(HatMetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [0.5, HR3]]),
-        shape: TileType::THat,
+        shape: HatTileType::THat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     }));
@@ -154,29 +154,29 @@ const P_OUTLINE: &[Vec2] = &[
     Vec2::new(-1.0, 2.0 * HR3),
 ];
 
-pub fn p_init() -> MetaTile {
-    let mut p = MetaTile {
+pub fn p_init() -> HatMetaTile {
+    let mut p = HatMetaTile {
         children: Vec::new(),
         transform: Affine2::IDENTITY,
-        shape: TileType::P,
+        shape: HatTileType::P,
         width: 2,
         outline: P_OUTLINE.to_vec(),
     };
-    p.push(MetaTile {
+    p.push(HatMetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [1.5, HR3]]),
-        shape: TileType::PHat,
+        shape: HatTileType::PHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     });
-    p.push(MetaTile {
+    p.push(HatMetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[
             [0.25, -0.5 * HR3],
             [0.5 * HR3, 0.25],
             [0.0, SQ3],
         ]),
-        shape: TileType::PHat,
+        shape: HatTileType::PHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     });
@@ -191,31 +191,31 @@ const F_OUTLINE: &[Vec2] = &[
     Vec2::new(-1.0, 2.0 * HR3),
 ];
 
-pub fn f_init() -> MetaTile {
-    let mut f = MetaTile {
+pub fn f_init() -> HatMetaTile {
+    let mut f = HatMetaTile {
         children: Vec::new(),
         transform: Affine2::IDENTITY,
-        shape: TileType::F,
+        shape: HatTileType::F,
         width: 2,
         outline: F_OUTLINE.to_vec(),
     };
 
-    f.push(MetaTile {
+    f.push(HatMetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[[0.5, 0.0], [0.0, 0.5], [1.5, HR3]]),
-        shape: TileType::FHat,
+        shape: HatTileType::FHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     });
 
-    f.push(MetaTile {
+    f.push(HatMetaTile {
         children: Vec::new(),
         transform: Affine2::from_cols_array_2d(&[
             [0.25, -0.5 * HR3],
             [0.5 * HR3, 0.25],
             [0.0, SQ3],
         ]),
-        shape: TileType::FHat,
+        shape: HatTileType::FHat,
         width: 1,
         outline: HAT_OUTLINE.to_vec(),
     });

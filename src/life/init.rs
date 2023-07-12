@@ -14,7 +14,7 @@ use std::ops::Mul;
 use crate::constants::CAP;
 use crate::{
     tree::hat::MetaTileTree,
-    tree::hat_meta_tiles::{MetaTile, TileType, HAT_OUTLINE},
+    tree::hat_meta_tiles::{HatMetaTile, HatTileType, HAT_OUTLINE},
 };
 
 use super::noise::AddNoiseEvent;
@@ -81,16 +81,18 @@ fn neighbors(kdtree: &Kdt, affines: &[Affine2], idx: usize) -> Vec<usize> {
     ns
 }
 
-fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &MetaTile) {
+fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &HatMetaTile) {
     let new_transform = t.mul(tree.transform);
     for child in &tree.children {
         make_affines(affines, new_transform, child)
     }
 
     match tree.shape {
-        TileType::H1Hat | TileType::HHat | TileType::THat | TileType::PHat | TileType::FHat => {
-            affines.push(new_transform)
-        }
+        HatTileType::H1Hat
+        | HatTileType::HHat
+        | HatTileType::THat
+        | HatTileType::PHat
+        | HatTileType::FHat => affines.push(new_transform),
         _ => {
             // let level = (tree.width as f32).log2() as usize;
             // polys.meta[level].push(poly);

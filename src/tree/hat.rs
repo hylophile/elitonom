@@ -2,7 +2,7 @@ use std::{f32::consts::PI, ops::Mul, sync::Arc};
 
 use crate::{
     constants::{STROKE_COLOR, STROKE_WIDTH},
-    tree::hat_meta_tiles::{f_init, h_init, p_init, t_init, MetaTile, TileType},
+    tree::hat_meta_tiles::{f_init, h_init, p_init, t_init, HatMetaTile, HatTileType},
     utils::{intersect, match_two, rot_about},
 };
 use bevy::math::{Affine2, Vec2};
@@ -14,12 +14,12 @@ use bevy_prototype_lyon::{
 
 use super::{DeadCells, TreeConfig};
 
-fn shape_to_id(shape: TileType) -> usize {
+fn shape_to_id(shape: HatTileType) -> usize {
     match shape {
-        TileType::H => 0,
-        TileType::T => 1,
-        TileType::P => 2,
-        TileType::F => 3,
+        HatTileType::H => 0,
+        HatTileType::T => 1,
+        HatTileType::P => 2,
+        HatTileType::F => 3,
         _ => panic!(),
     }
 }
@@ -27,43 +27,48 @@ fn shape_to_id(shape: TileType) -> usize {
 #[derive(Debug)]
 enum Rule {
     H,
-    Four(usize, usize, TileType, usize),
-    Six(usize, usize, usize, usize, TileType, usize),
+    Four(usize, usize, HatTileType, usize),
+    Six(usize, usize, usize, usize, HatTileType, usize),
 }
 
 static RULES: &[Rule] = &[
     Rule::H,
-    Rule::Four(0, 0, TileType::P, 2),
-    Rule::Four(1, 0, TileType::H, 2),
-    Rule::Four(2, 0, TileType::P, 2),
-    Rule::Four(3, 0, TileType::H, 2),
-    Rule::Four(4, 4, TileType::P, 2),
-    Rule::Four(0, 4, TileType::F, 3),
-    Rule::Four(2, 4, TileType::F, 3),
-    Rule::Six(4, 1, 3, 2, TileType::F, 0),
-    Rule::Four(8, 3, TileType::H, 0),
-    Rule::Four(9, 2, TileType::P, 0),
-    Rule::Four(10, 2, TileType::H, 0),
-    Rule::Four(11, 4, TileType::P, 2),
-    Rule::Four(12, 0, TileType::H, 2),
-    Rule::Four(13, 0, TileType::F, 3),
-    Rule::Four(14, 2, TileType::F, 1),
-    Rule::Four(15, 3, TileType::H, 4),
-    Rule::Four(8, 2, TileType::F, 1),
-    Rule::Four(17, 3, TileType::H, 0),
-    Rule::Four(18, 2, TileType::P, 0),
-    Rule::Four(19, 2, TileType::H, 2),
-    Rule::Four(20, 4, TileType::F, 3),
-    Rule::Four(20, 0, TileType::P, 2),
-    Rule::Four(22, 0, TileType::H, 2),
-    Rule::Four(23, 4, TileType::F, 3),
-    Rule::Four(23, 0, TileType::F, 3),
-    Rule::Four(16, 0, TileType::P, 2),
-    Rule::Six(9, 4, 0, 2, TileType::T, 2),
-    Rule::Four(4, 0, TileType::F, 3),
+    Rule::Four(0, 0, HatTileType::P, 2),
+    Rule::Four(1, 0, HatTileType::H, 2),
+    Rule::Four(2, 0, HatTileType::P, 2),
+    Rule::Four(3, 0, HatTileType::H, 2),
+    Rule::Four(4, 4, HatTileType::P, 2),
+    Rule::Four(0, 4, HatTileType::F, 3),
+    Rule::Four(2, 4, HatTileType::F, 3),
+    Rule::Six(4, 1, 3, 2, HatTileType::F, 0),
+    Rule::Four(8, 3, HatTileType::H, 0),
+    Rule::Four(9, 2, HatTileType::P, 0),
+    Rule::Four(10, 2, HatTileType::H, 0),
+    Rule::Four(11, 4, HatTileType::P, 2),
+    Rule::Four(12, 0, HatTileType::H, 2),
+    Rule::Four(13, 0, HatTileType::F, 3),
+    Rule::Four(14, 2, HatTileType::F, 1),
+    Rule::Four(15, 3, HatTileType::H, 4),
+    Rule::Four(8, 2, HatTileType::F, 1),
+    Rule::Four(17, 3, HatTileType::H, 0),
+    Rule::Four(18, 2, HatTileType::P, 0),
+    Rule::Four(19, 2, HatTileType::H, 2),
+    Rule::Four(20, 4, HatTileType::F, 3),
+    Rule::Four(20, 0, HatTileType::P, 2),
+    Rule::Four(22, 0, HatTileType::H, 2),
+    Rule::Four(23, 4, HatTileType::F, 3),
+    Rule::Four(23, 0, HatTileType::F, 3),
+    Rule::Four(16, 0, HatTileType::P, 2),
+    Rule::Six(9, 4, 0, 2, HatTileType::T, 2),
+    Rule::Four(4, 0, HatTileType::F, 3),
 ];
 
-fn construct_patch(h: MetaTile, t: MetaTile, p: MetaTile, f: MetaTile) -> Vec<Arc<MetaTile>> {
+fn construct_patch(
+    h: HatMetaTile,
+    t: HatMetaTile,
+    p: HatMetaTile,
+    f: HatMetaTile,
+) -> Vec<Arc<HatMetaTile>> {
     // let mut root = MetaTile::new(MetaTile::new(
     //     Affine2::IDENTITY,
     //     TileType::Pseudo,
@@ -83,7 +88,7 @@ fn construct_patch(h: MetaTile, t: MetaTile, p: MetaTile, f: MetaTile) -> Vec<Ar
                 root.push(Arc::new(h));
             }
             Rule::Four(n_child, n_outline, shape, n_vertex) => {
-                let child: Arc<MetaTile> = root[*n_child].clone();
+                let child: Arc<HatMetaTile> = root[*n_child].clone();
                 let poly = child.outline.clone();
                 let t = child.transform;
 
@@ -157,18 +162,18 @@ fn construct_patch(h: MetaTile, t: MetaTile, p: MetaTile, f: MetaTile) -> Vec<Ar
 }
 
 pub struct AllFour {
-    pub h: MetaTile,
-    pub t: MetaTile,
-    pub p: MetaTile,
-    pub f: MetaTile,
+    pub h: HatMetaTile,
+    pub t: HatMetaTile,
+    pub p: HatMetaTile,
+    pub f: HatMetaTile,
 }
 
-fn eval_meta_tile(mt: &MetaTile, i: usize) -> Vec2 {
+fn eval_meta_tile(mt: &HatMetaTile, i: usize) -> Vec2 {
     let p = mt.outline[i];
     mt.transform.transform_point2(p)
 }
 
-fn construct_meta_tiles(patch: Vec<Arc<MetaTile>>) -> AllFour {
+fn construct_meta_tiles(patch: Vec<Arc<HatMetaTile>>) -> AllFour {
     let bps1 = eval_meta_tile(&patch[8], 2);
     let bps2 = eval_meta_tile(&patch[21], 2);
     let rbps = rot_about(bps1, (-2.0 * PI) / 3.0).transform_point2(bps2);
@@ -194,11 +199,11 @@ fn construct_meta_tiles(patch: Vec<Arc<MetaTile>>) -> AllFour {
     new_h_outline.push(new_h_outline[3] - w);
     new_h_outline.push(eval_meta_tile(&patch[6], 2));
 
-    let mut new_h = MetaTile {
+    let mut new_h = HatMetaTile {
         children: Vec::new(),
         transform: Affine2::IDENTITY,
         width: patch[0].width * 2,
-        shape: TileType::H,
+        shape: HatTileType::H,
         outline: new_h_outline.clone(),
     };
 
@@ -207,11 +212,11 @@ fn construct_meta_tiles(patch: Vec<Arc<MetaTile>>) -> AllFour {
     }
 
     let new_p_outline = vec![p72, (p72 + (bps1 - llc)), bps1, llc];
-    let mut new_p = MetaTile {
+    let mut new_p = HatMetaTile {
         children: Vec::new(),
         transform: Affine2::IDENTITY,
         width: patch[0].width * 2,
-        shape: TileType::P,
+        shape: HatTileType::P,
         outline: new_p_outline,
     };
 
@@ -227,11 +232,11 @@ fn construct_meta_tiles(patch: Vec<Arc<MetaTile>>) -> AllFour {
         (p252 + (llc - bps1)),
     ];
 
-    let mut new_f = MetaTile {
+    let mut new_f = HatMetaTile {
         children: Vec::new(),
         transform: Affine2::IDENTITY,
         width: patch[0].width * 2,
-        shape: TileType::F,
+        shape: HatTileType::F,
         outline: new_f_outline,
     };
 
@@ -244,11 +249,11 @@ fn construct_meta_tiles(patch: Vec<Arc<MetaTile>>) -> AllFour {
     let ccc = rot_about(bbb, -PI / 3.0).transform_point2(aaa);
     let new_t_outline = vec![bbb, ccc, aaa];
 
-    let mut new_t = MetaTile {
+    let mut new_t = HatMetaTile {
         children: Vec::new(),
         transform: Affine2::IDENTITY,
         width: patch[0].width * 2,
-        shape: TileType::T,
+        shape: HatTileType::T,
         outline: new_t_outline,
     };
 
@@ -263,7 +268,7 @@ fn construct_meta_tiles(patch: Vec<Arc<MetaTile>>) -> AllFour {
 }
 
 #[derive(Resource)]
-pub struct MetaTileTree(pub MetaTile);
+pub struct MetaTileTree(pub HatMetaTile);
 
 fn construct_hat_tree(levels: usize) -> AllFour {
     let mut a = AllFour {
@@ -326,21 +331,21 @@ pub fn hat_background_polygons(mut commands: Commands, tree_config: Res<TreeConf
     // std::process::exit(0);
     // if false {
     for (i, shape) in [
-        TileType::H1Hat,
-        TileType::HHat,
-        TileType::THat,
-        TileType::FHat,
-        TileType::PHat,
+        HatTileType::H1Hat,
+        HatTileType::HHat,
+        HatTileType::THat,
+        HatTileType::FHat,
+        HatTileType::PHat,
     ]
     .iter()
     .enumerate()
     {
         let polys = match shape {
-            TileType::H1Hat => &polys.h1,
-            TileType::HHat => &polys.h,
-            TileType::THat => &polys.t,
-            TileType::PHat => &polys.p,
-            TileType::FHat => &polys.f,
+            HatTileType::H1Hat => &polys.h1,
+            HatTileType::HHat => &polys.h,
+            HatTileType::THat => &polys.t,
+            HatTileType::PHat => &polys.p,
+            HatTileType::FHat => &polys.f,
             _ => panic!(),
         };
         for chunk in polys.chunks(500_000) {
@@ -390,7 +395,7 @@ pub fn hat_background_polygons(mut commands: Commands, tree_config: Res<TreeConf
     }
 }
 
-fn shape_to_fill_color(shape: TileType) -> Color {
+fn shape_to_fill_color(shape: HatTileType) -> Color {
     let tr = 0.2;
     match shape {
         // TileType::H1Hat => crate::constants::H_MIRROR_COLOR,
@@ -398,10 +403,10 @@ fn shape_to_fill_color(shape: TileType) -> Color {
         // TileType::THat => crate::constants::T_COLOR,
         // TileType::PHat => crate::constants::P_COLOR,
         // TileType::FHat => crate::constants::F_COLOR,
-        TileType::H1Hat => Color::rgba(0.0, 0.0, 1.0, tr),
-        TileType::HHat => Color::rgba(0.0, 1.0, 1.0, tr),
-        TileType::PHat => Color::rgba(1.0, 0.0, 1.0, tr),
-        TileType::FHat => Color::rgba(1.0, 1.0, 0.0, tr),
+        HatTileType::H1Hat => Color::rgba(0.0, 0.0, 1.0, tr),
+        HatTileType::HHat => Color::rgba(0.0, 1.0, 1.0, tr),
+        HatTileType::PHat => Color::rgba(1.0, 0.0, 1.0, tr),
+        HatTileType::FHat => Color::rgba(1.0, 1.0, 0.0, tr),
         // TileType::Pseudo => _
         _ => Color::rgba(1.0, 1.0, 1.0, 0.0),
         // _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
@@ -416,7 +421,7 @@ struct HatPolys {
     p: HatPoints,
     meta: Vec<Vec<shapes::Polygon>>,
 }
-fn make_hat_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
+fn make_hat_polygons(polys: &mut HatPolys, t: Affine2, tree: &HatMetaTile) {
     for child in &tree.children {
         make_hat_polygons(polys, t.mul(tree.transform), child);
     }
@@ -433,11 +438,11 @@ fn make_hat_polygons(polys: &mut HatPolys, t: Affine2, tree: &MetaTile) {
         closed: true,
     };
     match tree.shape {
-        TileType::H1Hat => polys.h1.push(poly),
-        TileType::HHat => polys.h.push(poly),
-        TileType::THat => polys.t.push(poly),
-        TileType::PHat => polys.p.push(poly),
-        TileType::FHat => polys.f.push(poly),
+        HatTileType::H1Hat => polys.h1.push(poly),
+        HatTileType::HHat => polys.h.push(poly),
+        HatTileType::THat => polys.t.push(poly),
+        HatTileType::PHat => polys.p.push(poly),
+        HatTileType::FHat => polys.f.push(poly),
         _ => {
             let level = (tree.width as f32).log2() as usize;
             polys.meta[level].push(poly);
