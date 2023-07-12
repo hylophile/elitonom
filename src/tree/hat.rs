@@ -1,8 +1,7 @@
 use std::{f32::consts::PI, ops::Mul, sync::Arc};
 
 use crate::{
-    constants::{LEVELS, STROKE_COLOR, STROKE_WIDTH},
-    life::init::AliveCells,
+    constants::{STROKE_COLOR, STROKE_WIDTH},
     tree::hat_meta_tiles::{f_init, h_init, p_init, t_init, MetaTile, TileType},
     utils::{intersect, match_two, rot_about},
 };
@@ -283,7 +282,7 @@ fn construct_hat_tree(levels: usize) -> AllFour {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-pub enum MetaTileType {
+pub enum HatMetaTileType {
     H,
     T,
     P,
@@ -293,10 +292,10 @@ pub enum MetaTileType {
 pub fn hat_background_polygons(mut commands: Commands, tree_config: Res<TreeConfig>) {
     let all = construct_hat_tree(tree_config.levels);
     let mtt = match tree_config.meta_tile {
-        MetaTileType::H => all.h,
-        MetaTileType::T => all.t,
-        MetaTileType::P => all.p,
-        MetaTileType::F => all.f,
+        HatMetaTileType::H => all.h,
+        HatMetaTileType::T => all.t,
+        HatMetaTileType::P => all.p,
+        HatMetaTileType::F => all.f,
     };
 
     let cap = 200_000;

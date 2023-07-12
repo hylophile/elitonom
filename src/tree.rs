@@ -1,10 +1,14 @@
 pub mod hat;
 pub mod hat_meta_tiles;
+pub mod spectre;
 
 use crate::{constants::LEVELS, life::init::AliveCells};
 use bevy::prelude::*;
 
-use self::hat::{hat_background_polygons, MetaTileType};
+use self::{
+    hat::{hat_background_polygons, HatMetaTileType},
+    spectre::spectre_background_polygons,
+};
 
 #[derive(Component)]
 pub struct DeadCells;
@@ -12,7 +16,7 @@ pub struct DeadCells;
 #[derive(Resource, Debug)]
 pub struct TreeConfig {
     pub levels: usize,
-    pub meta_tile: MetaTileType,
+    pub meta_tile: HatMetaTileType,
     pub spectre: bool,
 }
 
@@ -22,7 +26,7 @@ impl Plugin for TreePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TreeConfig {
             levels: LEVELS,
-            meta_tile: MetaTileType::H,
+            meta_tile: HatMetaTileType::H,
             spectre: false,
         })
         .add_system(background_polygons);
@@ -43,6 +47,10 @@ fn background_polygons(
             commands.entity(c).despawn();
         }
 
-        hat_background_polygons(commands, tree_config)
+        if tree_config.spectre {
+            spectre_background_polygons(commands, tree_config.levels)
+        } else {
+            hat_background_polygons(commands, tree_config)
+        }
     }
 }

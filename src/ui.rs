@@ -6,7 +6,7 @@ use crate::{
         noise::{AddNoiseEvent, RemoveNoiseEvent},
         LifeConfig, StepTimer,
     },
-    tree::{hat::MetaTileType, TreeConfig},
+    tree::{hat::HatMetaTileType, TreeConfig},
 };
 
 pub struct UIPlugin;
@@ -17,7 +17,7 @@ struct UIState {
     survival: String,
     update_interval: String,
     // levels: String,
-    meta_tile: MetaTileType,
+    meta_tile: HatMetaTileType,
     add_noise_percent: String,
     remove_noise_percent: String,
     stroke_width: String,
@@ -33,7 +33,7 @@ impl Plugin for UIPlugin {
             add_noise_percent: "10".to_string(),
             remove_noise_percent: "10".to_string(),
             stroke_width: "1".to_string(),
-            meta_tile: MetaTileType::H,
+            meta_tile: HatMetaTileType::H,
         })
         .add_plugin(EguiPlugin)
         .add_startup_system(configure_visuals_system)
@@ -177,33 +177,33 @@ fn ui_system(
 
             ui.horizontal(|ui| {
                 if ui
-                    .radio_value(&mut ui_state.meta_tile, MetaTileType::H, "H")
+                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::H, "H")
                     .clicked()
                 {
-                    ui_state.meta_tile = MetaTileType::H;
-                    tree_config.meta_tile = MetaTileType::H;
+                    ui_state.meta_tile = HatMetaTileType::H;
+                    tree_config.meta_tile = HatMetaTileType::H;
                 };
                 if ui
-                    .radio_value(&mut ui_state.meta_tile, MetaTileType::T, "T")
+                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::T, "T")
                     .clicked()
                 {
-                    ui_state.meta_tile = MetaTileType::T;
-                    tree_config.meta_tile = MetaTileType::T;
+                    ui_state.meta_tile = HatMetaTileType::T;
+                    tree_config.meta_tile = HatMetaTileType::T;
                 };
 
                 if ui
-                    .radio_value(&mut ui_state.meta_tile, MetaTileType::P, "P")
+                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::P, "P")
                     .clicked()
                 {
-                    ui_state.meta_tile = MetaTileType::P;
-                    tree_config.meta_tile = MetaTileType::P;
+                    ui_state.meta_tile = HatMetaTileType::P;
+                    tree_config.meta_tile = HatMetaTileType::P;
                 };
                 if ui
-                    .radio_value(&mut ui_state.meta_tile, MetaTileType::F, "F")
+                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::F, "F")
                     .clicked()
                 {
-                    ui_state.meta_tile = MetaTileType::F;
-                    tree_config.meta_tile = MetaTileType::F;
+                    ui_state.meta_tile = HatMetaTileType::F;
+                    tree_config.meta_tile = HatMetaTileType::F;
                 };
             })
             // ui.add(egui::widgets::Image::new(

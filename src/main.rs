@@ -6,7 +6,6 @@ use constants::BG_COLOR;
 
 mod constants;
 mod life;
-mod meta_tiles;
 mod tree;
 mod ui;
 mod utils;
