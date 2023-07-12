@@ -27,7 +27,7 @@ impl Plugin for TreePlugin {
         app.insert_resource(TreeConfig {
             levels: LEVELS,
             meta_tile: HatMetaTileType::H,
-            spectre: false,
+            spectre: true,
         })
         .add_system(background_polygons);
     }
