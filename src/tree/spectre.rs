@@ -15,10 +15,32 @@ use std::sync::Arc;
 type Quad = [Vec2; 4];
 
 #[derive(Debug, Clone)]
+pub struct SpectreShape {
+    pub transform: Affine2,
+}
+
+impl SpectreShape {
+    pub fn new() -> Self {
+        Self {
+            transform: Affine2::IDENTITY,
+        }
+    }
+    pub fn transformed(transform: Affine2) -> Self {
+        Self { transform }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct SpectreMetaTile {
     pub transform: Affine2,
     pub quad: Quad,
-    pub children: Vec<Arc<SpectreMetaTile>>,
+    pub children: Vec<Arc<SpectreNode>>,
+}
+
+#[derive(Debug, Clone)]
+pub enum SpectreNode {
+    Meta(SpectreMetaTile),
+    Shape(SpectreShape),
 }
 
 impl SpectreMetaTile {
@@ -79,35 +101,35 @@ use SpectreCategory::*;
 
 #[derive(Debug, Clone)]
 struct Sys {
-    gamma: SpectreMetaTile,
-    delta: SpectreMetaTile,
-    theta: SpectreMetaTile,
-    lambda: SpectreMetaTile,
-    xi: SpectreMetaTile,
-    pi: SpectreMetaTile,
-    sigma: SpectreMetaTile,
-    phi: SpectreMetaTile,
-    psi: SpectreMetaTile,
+    gamma: SpectreNode,
+    delta: SpectreNode,
+    theta: SpectreNode,
+    lambda: SpectreNode,
+    xi: SpectreNode,
+    pi: SpectreNode,
+    sigma: SpectreNode,
+    phi: SpectreNode,
+    psi: SpectreNode,
 }
 
 impl Sys {
     pub fn new() -> Self {
         Self {
-            gamma: SpectreMetaTile::new(),
-            delta: SpectreMetaTile::new(),
-            theta: SpectreMetaTile::new(),
-            lambda: SpectreMetaTile::new(),
-            xi: SpectreMetaTile::new(),
-            pi: SpectreMetaTile::new(),
-            sigma: SpectreMetaTile::new(),
-            phi: SpectreMetaTile::new(),
-            psi: SpectreMetaTile::new(),
+            gamma: SpectreNode::Shape(SpectreShape::new()),
+            delta: SpectreNode::Shape(SpectreShape::new()),
+            theta: SpectreNode::Shape(SpectreShape::new()),
+            lambda: SpectreNode::Shape(SpectreShape::new()),
+            xi: SpectreNode::Shape(SpectreShape::new()),
+            pi: SpectreNode::Shape(SpectreShape::new()),
+            sigma: SpectreNode::Shape(SpectreShape::new()),
+            phi: SpectreNode::Shape(SpectreShape::new()),
+            psi: SpectreNode::Shape(SpectreShape::new()),
         }
     }
 }
 
 impl Index<SpectreCategory> for Sys {
-    type Output = SpectreMetaTile;
+    type Output = SpectreNode;
 
     fn index(&self, index: SpectreCategory) -> &Self::Output {
         match index {
@@ -173,7 +195,7 @@ pub fn spectre_background_polygons(mut commands: Commands, levels: usize) {
     // };
     // let sys = build_spectre_base();
     // let smt = sys.gamma;
-    let sys = build_spectre_tree(1);
+    let sys = build_spectre_tree(6);
     let smt = sys.delta;
 
     let mut polys = Vec::new();
@@ -193,23 +215,27 @@ pub fn spectre_background_polygons(mut commands: Commands, levels: usize) {
     ));
 }
 
-fn make_spectre_polygons(polys: &mut Vec<shapes::Polygon>, t: Affine2, tree: &SpectreMetaTile) {
-    for child in &tree.children {
-        make_spectre_polygons(polys, t.mul(tree.transform), child);
+fn make_spectre_polygons(polys: &mut Vec<shapes::Polygon>, t: Affine2, tree: &SpectreNode) {
+    match tree {
+        SpectreNode::Meta(tree) => {
+            for child in &tree.children {
+                make_spectre_polygons(polys, t.mul(tree.transform), child);
+            }
+        }
+        SpectreNode::Shape(s) => {
+            let tt = t.mul(s.transform);
+            let points = SPECTRE_OUTLINE
+                .iter()
+                .map(|p| tt.transform_point2(*p))
+                // .map(|p| (Affine2::from_scale(Vec2::new(100.0, 100.0))).transform_point2(*p))
+                .collect();
+            let poly = shapes::Polygon {
+                points,
+                closed: true,
+            };
+            polys.push(poly)
+        }
     }
-
-    let tt = t.mul(tree.transform);
-    let points = SPECTRE_OUTLINE
-        .iter()
-        .map(|p| tt.transform_point2(*p))
-        // .map(|p| (Affine2::from_scale(Vec2::new(100.0, 100.0))).transform_point2(*p))
-        .collect();
-    let poly = shapes::Polygon {
-        points,
-        closed: true,
-    };
-
-    polys.push(poly)
 }
 
 fn build_spectre_tree(levels: usize) -> Sys {
@@ -222,33 +248,36 @@ fn build_spectre_tree(levels: usize) -> Sys {
 }
 
 fn build_spectre_base() -> Sys {
-    let mystic = SpectreMetaTile {
+    let mystic = SpectreNode::Meta(SpectreMetaTile {
         transform: Affine2::IDENTITY,
         quad: *SPECTRE_KEYS,
         children: vec![
-            Arc::new(SpectreMetaTile::new()),
-            Arc::new(SpectreMetaTile::transformed(
+            Arc::new(SpectreNode::Shape(SpectreShape::new())),
+            Arc::new(SpectreNode::Shape(SpectreShape::transformed(
                 Affine2::from_angle_translation(PI / 6.0, SPECTRE_OUTLINE[8]),
-            )),
+            ))),
         ],
-    };
+    });
 
     Sys {
         gamma: mystic,
-        delta: SpectreMetaTile::new(),
-        theta: SpectreMetaTile::new(),
-        lambda: SpectreMetaTile::new(),
-        xi: SpectreMetaTile::new(),
-        pi: SpectreMetaTile::new(),
-        sigma: SpectreMetaTile::new(),
-        phi: SpectreMetaTile::new(),
-        psi: SpectreMetaTile::new(),
+        delta: SpectreNode::Shape(SpectreShape::new()),
+        theta: SpectreNode::Shape(SpectreShape::new()),
+        lambda: SpectreNode::Shape(SpectreShape::new()),
+        xi: SpectreNode::Shape(SpectreShape::new()),
+        pi: SpectreNode::Shape(SpectreShape::new()),
+        sigma: SpectreNode::Shape(SpectreShape::new()),
+        phi: SpectreNode::Shape(SpectreShape::new()),
+        psi: SpectreNode::Shape(SpectreShape::new()),
     }
 }
 
 fn build_spectre_super_tiles(sys: Sys) -> Sys {
     let r = Affine2::from_scale(Vec2::new(-1.0, 1.0));
-    let quad = sys.delta.quad;
+    let quad = match sys.delta {
+        SpectreNode::Meta(ref m) => m.quad,
+        SpectreNode::Shape(_) => *SPECTRE_KEYS,
+    };
     let mut ts = vec![Affine2::IDENTITY];
     let mut total_angle = 0.0;
     let mut tquad = quad;
@@ -294,15 +323,18 @@ fn build_spectre_super_tiles(sys: Sys) -> Sys {
         for i in 0..8 {
             if let Some(sub) = subs[i] {
                 let mut a = sys[sub].clone();
-                a.transform = ts[i];
+                match a {
+                    SpectreNode::Meta(ref mut m) => m.transform = ts[i],
+                    SpectreNode::Shape(ref mut s) => s.transform = ts[i],
+                };
                 children.push(a.into());
             }
         }
-        ret[*category] = SpectreMetaTile {
+        ret[*category] = SpectreNode::Meta(SpectreMetaTile {
             transform: Affine2::IDENTITY,
             quad: super_quad,
             children,
-        }
+        })
     }
 
     ret
