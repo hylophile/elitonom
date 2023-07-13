@@ -2,7 +2,10 @@ use std::{f32::consts::PI, ops::Mul, sync::Arc};
 
 use crate::{
     constants::{STROKE_COLOR, STROKE_WIDTH},
-    tree::hat_meta_tiles::{f_init, h_init, p_init, t_init, HatMetaTile, HatTileType},
+    tree::{
+        hat_meta_tiles::{f_init, h_init, p_init, t_init, HatMetaTile, HatTileType},
+        MetaTileNode, MetaTileTree,
+    },
     utils::{intersect, match_two, rot_about},
 };
 use bevy::math::{Affine2, Vec2};
@@ -267,9 +270,6 @@ fn construct_meta_tiles(patch: Vec<Arc<HatMetaTile>>) -> AllFour {
     }
 }
 
-#[derive(Resource)]
-pub struct MetaTileTree(pub HatMetaTile);
-
 fn construct_hat_tree(levels: usize) -> AllFour {
     let mut a = AllFour {
         h: h_init(),
@@ -327,7 +327,7 @@ pub fn hat_background_polygons(mut commands: Commands, tree_config: Res<TreeConf
     dbg!(polys.p.len());
     dbg!(polys.f.len());
 
-    commands.insert_resource(MetaTileTree(mtt));
+    commands.insert_resource(MetaTileTree(MetaTileNode::Hat(mtt)));
     // std::process::exit(0);
     // if false {
     for (i, shape) in [

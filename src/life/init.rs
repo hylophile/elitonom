@@ -12,9 +12,11 @@ pub type Kdt = kiddo::float::kdtree::KdTree<f32, u32, 2, 64, u16>;
 use std::ops::Mul;
 
 use crate::constants::CAP;
+use crate::tree::spectre::{SpectreMetaTile, SpectreNode};
+use crate::tree::MetaTileNode;
 use crate::{
-    tree::hat::MetaTileTree,
     tree::hat_meta_tiles::{HatMetaTile, HatTileType, HAT_OUTLINE},
+    tree::MetaTileTree,
 };
 
 use super::noise::AddNoiseEvent;
@@ -76,15 +78,32 @@ fn neighbors(kdtree: &Kdt, affines: &[Affine2], idx: usize) -> Vec<usize> {
         .filter(|n| n.item as usize != idx)
         .for_each(|neighbor| {
             ns.push(neighbor.item as usize);
-            // dbg!(neighbor.distance);
         });
     ns
 }
 
-fn make_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &HatMetaTile) {
+fn make_spectre_affines(affines: &mut Vec<Affine2>, t: Affine2, node: &SpectreNode) {
+    // TODO we could just get the affines when we generate the polys in make_spectre_polys
+
+    match node {
+        SpectreNode::Meta(tree) => {
+            let new_transform = t.mul(tree.transform);
+            for child in &tree.children {
+                make_spectre_affines(affines, new_transform, child);
+            }
+        }
+        SpectreNode::Shape(leaf) => {
+            let new_transform = t.mul(leaf.transform);
+            affines.push(new_transform);
+        }
+    }
+}
+
+fn make_hat_affines(affines: &mut Vec<Affine2>, t: Affine2, tree: &HatMetaTile) {
+    // TODO we could just get the affines when we generate the polys in make_hat_polys
     let new_transform = t.mul(tree.transform);
     for child in &tree.children {
-        make_affines(affines, new_transform, child)
+        make_hat_affines(affines, new_transform, child)
     }
 
     match tree.shape {
@@ -109,12 +128,18 @@ pub fn gen_neighbors(mut commands: Commands, mtt: Option<Res<MetaTileTree>>) {
     if let Some(mtt) = mtt {
         if mtt.is_added() || mtt.is_changed() {
             let mut affines = Vec::with_capacity(CAP);
-            make_affines(
-                &mut affines,
-                // Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
-                Affine2::IDENTITY,
-                &mtt.0,
-            );
+            match &mtt.0 {
+                MetaTileNode::Hat(hmtt) => {
+                    make_hat_affines(&mut affines, Affine2::IDENTITY, &hmtt);
+                }
+                MetaTileNode::Spectre(s) => match s {
+                    SpectreNode::Meta(_) => {
+                        make_spectre_affines(&mut affines, Affine2::IDENTITY, &s);
+                    }
+                    SpectreNode::Shape(_) => todo!(),
+                },
+            };
+            // dbg!(affines.len());
             let mut kdtree: Kdt = KdTree::with_capacity(affines.len());
 
             affines

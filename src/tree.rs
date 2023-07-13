@@ -7,7 +7,8 @@ use bevy::prelude::*;
 
 use self::{
     hat::{hat_background_polygons, HatMetaTileType},
-    spectre::spectre_background_polygons,
+    hat_meta_tiles::HatMetaTile,
+    spectre::{spectre_background_polygons, SpectreNode},
 };
 
 #[derive(Component)]
@@ -19,6 +20,14 @@ pub struct TreeConfig {
     pub meta_tile: HatMetaTileType,
     pub spectre: bool,
 }
+
+pub enum MetaTileNode {
+    Hat(HatMetaTile),
+    Spectre(SpectreNode),
+}
+
+#[derive(Resource)]
+pub struct MetaTileTree(pub MetaTileNode);
 
 pub struct TreePlugin;
 

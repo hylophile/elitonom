@@ -1,4 +1,6 @@
 use super::DeadCells;
+use super::MetaTileNode;
+use super::MetaTileTree;
 use crate::constants::STROKE_COLOR;
 use crate::constants::STROKE_WIDTH;
 use bevy::math::Affine2;
@@ -205,6 +207,8 @@ pub fn spectre_background_polygons(mut commands: Commands, levels: usize) {
     for poly in polys {
         g = g.add(&poly);
     }
+
+    commands.insert_resource(MetaTileTree(MetaTileNode::Spectre(smt)));
     commands.spawn((
         ShapeBundle {
             path: g.build(),
@@ -227,7 +231,6 @@ fn make_spectre_polygons(polys: &mut Vec<shapes::Polygon>, t: Affine2, tree: &Sp
             let points = SPECTRE_OUTLINE
                 .iter()
                 .map(|p| tt.transform_point2(*p))
-                // .map(|p| (Affine2::from_scale(Vec2::new(100.0, 100.0))).transform_point2(*p))
                 .collect();
             let poly = shapes::Polygon {
                 points,
