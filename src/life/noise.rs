@@ -15,10 +15,10 @@ use rand::distributions::Uniform;
 use rand::Rng;
 
 use crate::constants::CAP;
+use crate::tree::TreeConfig;
 
 use super::init::{Affines, AliveCells, LifeState};
-use super::step::hatsmesh;
-
+use super::step::gen_mesh;
 
 pub fn add_noise(
     mut commands: Commands,
@@ -28,6 +28,7 @@ pub fn add_noise(
         Option<ResMut<LifeState>>,
     ),
     affines: Option<Res<Affines>>,
+    tree_config: Res<TreeConfig>,
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<AddNoiseEvent>,
 ) {
@@ -55,12 +56,13 @@ pub fn add_noise(
 
             // dbg!(&life_state);
 
-            let hatss = hatsmesh(&ne, &affines.0);
+            let hatss = gen_mesh(&ne, &affines.0, tree_config.spectre);
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(hatss).into(),
                     // transform: Transform::default().with_scale(Vec3::splat(128.)),
                     material: materials.add(ColorMaterial::from(Color::BLACK)),
+                    // material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.5))),
                     ..default()
                 },
                 AliveCells,
@@ -78,6 +80,7 @@ pub fn remove_noise(
         Option<ResMut<LifeState>>,
     ),
     affines: Option<Res<Affines>>,
+    tree_config: Res<TreeConfig>,
     cells: Query<Entity, With<AliveCells>>,
     mut evts: EventReader<RemoveNoiseEvent>,
 ) {
@@ -107,7 +110,7 @@ pub fn remove_noise(
 
             // dbg!(&life_state);
 
-            let hatss = hatsmesh(&ne, &affines.0);
+            let hatss = gen_mesh(&ne, &affines.0, tree_config.spectre);
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(hatss).into(),

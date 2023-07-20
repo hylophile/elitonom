@@ -22,7 +22,7 @@ fn setup(
     commands
         .spawn(Camera2dBundle {
             projection: OrthographicProjection {
-                scale: 1.0,
+                scale: 0.1,
                 ..default()
             },
             ..default()
@@ -42,6 +42,7 @@ fn main() {
             primary_window: Some(Window {
                 title: "Aperiodic Game of Life".to_string(),
                 fit_canvas_to_parent: true,
+                prevent_default_event_handling: false,
                 ..default()
             }),
             ..default()

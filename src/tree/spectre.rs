@@ -197,7 +197,7 @@ pub fn spectre_background_polygons(mut commands: Commands, levels: usize) {
     // };
     // let sys = build_spectre_base();
     // let smt = sys.gamma;
-    let sys = build_spectre_tree(6);
+    let sys = build_spectre_tree(levels);
     let smt = sys.delta;
 
     let mut polys = Vec::new();

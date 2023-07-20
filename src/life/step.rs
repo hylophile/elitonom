@@ -7,13 +7,15 @@ use bevy::{math::Affine2, prelude::*};
 use bevy_prototype_lyon::prelude::*;
 
 use crate::tree::hat_meta_tiles::HAT_OUTLINE;
+use crate::tree::spectre::SPECTRE_OUTLINE;
+use crate::tree::TreeConfig;
 
 use super::init::{Affines, AliveCells, HatNeighbors, LifeState};
 
 use super::{LifeConfig, StepTimer};
 
 #[rustfmt::skip]
-static IND: [u32; 24] = [
+static HAT_INDICES: [u32; 24] = [
     0,  1,  3,
     0,  3,  4,
     0,  5,  9,
@@ -24,17 +26,42 @@ static IND: [u32; 24] = [
     5,  7,  8,
 ];
 
-pub fn hatsmesh(idxs: &Vec<usize>, affines: &[Affine2]) -> Mesh {
+#[rustfmt::skip]
+static SPECTRE_INDICES: [u32; 36] = [
+    0,   1,   13,
+    1,   2,   3,
+    1,   3,   4,
+    1,   4,   8,
+    1,   8,   9,
+    1,   9,   13,
+    4,   5,   7,
+    4,   7,   8,
+    5,   6,   7,
+    13,  10,  11,
+    12,  13,  11,
+    13,  9,   10,
+];
+
+pub fn gen_mesh(idxs: &Vec<usize>, affines: &[Affine2], is_spectre: bool) -> Mesh {
+    let (outline, indices): (&[Vec2], &[u32]) = if is_spectre {
+        (SPECTRE_OUTLINE, &SPECTRE_INDICES)
+    } else {
+        (HAT_OUTLINE, &HAT_INDICES)
+    };
+
     let mut vertices = Vec::with_capacity(affines.len());
     vertices.extend(idxs.iter().flat_map(|id| {
-        HAT_OUTLINE.iter().map(|p| {
+        outline.iter().map(|p| {
             let p2 = affines[*id].transform_point2(*p);
             [p2.x, p2.y, 0.0]
         })
     }));
 
-    let mut is: Vec<u32> = Vec::with_capacity(IND.len() * idxs.len());
-    is.extend((0..idxs.len() as u32).flat_map(|j| IND.iter().map(move |i| i + j * 13)));
+    let mut is: Vec<u32> = Vec::with_capacity(indices.len() * idxs.len());
+    is.extend(
+        (0..idxs.len() as u32)
+            .flat_map(|j| indices.iter().map(move |i| i + j * outline.len() as u32)),
+    );
     let indices = Indices::U32(is);
 
     let positions: Vec<_> = vertices.clone();
@@ -89,8 +116,9 @@ pub fn step_life(
         ResMut<LifeState>,
         ResMut<StepTimer>,
     ),
-    (life_config, neighbors, affines, time): (
+    (life_config, tree_config, neighbors, affines, time): (
         Res<LifeConfig>,
+        Res<TreeConfig>,
         Res<HatNeighbors>,
         Res<Affines>,
         Res<Time>,
@@ -116,7 +144,7 @@ pub fn step_life(
                 ne.push(i);
             }
         }
-        let hatss = hatsmesh(&ne, &affines.0);
+        let hatss = gen_mesh(&ne, &affines.0, tree_config.spectre);
         commands.spawn((
             MaterialMesh2dBundle {
                 mesh: meshes.add(hatss).into(),

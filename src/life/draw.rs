@@ -1,7 +1,10 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use kiddo::distance::squared_euclidean;
 
-use crate::life::{init::AliveCells, step::hatsmesh};
+use crate::{
+    life::{init::AliveCells, step::gen_mesh},
+    tree::TreeConfig,
+};
 
 use super::{
     init::{Affines, LifeState, MetaTileKdTree},
@@ -18,11 +21,12 @@ pub fn draw(
         ResMut<Assets<ColorMaterial>>,
         Option<ResMut<LifeState>>,
     ),
-    (buttons, affines, kdtree, life_config): (
+    (buttons, affines, kdtree, life_config, tree_config): (
         Res<Input<MouseButton>>,
         Option<Res<Affines>>,
         Option<Res<MetaTileKdTree>>,
         Res<LifeConfig>,
+        Res<TreeConfig>,
     ),
     // query to get camera transform
     camera_q: Query<(&Camera, &GlobalTransform)>,
@@ -53,12 +57,12 @@ pub fn draw(
                             ne.item as usize
                         })
                         .collect();
-                    let hatss = hatsmesh(&ne, &affines.0);
+                    let hatss = gen_mesh(&ne, &affines.0, tree_config.spectre);
                     commands.spawn((
                         MaterialMesh2dBundle {
                             mesh: meshes.add(hatss).into(),
                             material: materials
-                                .add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.99))),
+                                .add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 1.0))),
                             // material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.1))),
                             ..default()
                         },
