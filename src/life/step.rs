@@ -108,51 +108,64 @@ pub fn _spawn_idxs(
     ));
 }
 
+pub struct StepLifeEvent;
+
 pub fn step_life(
     mut commands: Commands,
-    (mut meshes, mut materials, mut life_state, mut step_timer): (
+    mut events: EventReader<StepLifeEvent>,
+    (mut meshes, mut materials, life_state): (
         ResMut<Assets<Mesh>>,
         ResMut<Assets<ColorMaterial>>,
-        ResMut<LifeState>,
-        ResMut<StepTimer>,
+        Option<ResMut<LifeState>>,
     ),
-    (life_config, tree_config, neighbors, affines, time): (
+    (life_config, tree_config, neighbors, affines): (
         Res<LifeConfig>,
         Res<TreeConfig>,
-        Res<HatNeighbors>,
-        Res<Affines>,
-        Res<Time>,
+        Option<Res<HatNeighbors>>,
+        Option<Res<Affines>>,
     ),
     cells: Query<Entity, With<AliveCells>>,
 ) {
-    if step_timer.0.tick(time.delta()).finished() {
-        for c in cells.iter() {
-            commands.entity(c).despawn();
-        }
-        life_state.swap();
-        let mut ne = Vec::with_capacity(affines.0.len());
-        let life_state = &mut *life_state;
-
-        for (i, x) in life_state.old.iter().enumerate() {
-            let ns = &neighbors.0[i];
-            let count = ns.iter().filter(|idx| life_state.old[**idx]).count(); // as u32;
-            life_state.new[i] = match x {
-                true => life_config.survival[count],
-                false => life_config.birth[count],
-            };
-            if life_state.new[i] {
-                ne.push(i);
+    if let (Some(mut life_state), Some(neighbors), Some(affines)) = (life_state, neighbors, affines)
+    {
+        for _ in events.iter() {
+            for c in cells.iter() {
+                commands.entity(c).despawn();
             }
+            life_state.swap();
+            let mut ne = Vec::with_capacity(affines.0.len());
+            let life_state = &mut *life_state;
+
+            for (i, x) in life_state.old.iter().enumerate() {
+                let ns = &neighbors.0[i];
+                let count = ns.iter().filter(|idx| life_state.old[**idx]).count(); // as u32;
+                life_state.new[i] = match x {
+                    true => life_config.survival[count],
+                    false => life_config.birth[count],
+                };
+                if life_state.new[i] {
+                    ne.push(i);
+                }
+            }
+            let mesh = gen_mesh(&ne, &affines.0, tree_config.spectre);
+            commands.spawn((
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(mesh).into(),
+                    material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.99))),
+                    // material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.1))),
+                    ..default()
+                },
+                AliveCells,
+            ));
         }
-        let hatss = gen_mesh(&ne, &affines.0, tree_config.spectre);
-        commands.spawn((
-            MaterialMesh2dBundle {
-                mesh: meshes.add(hatss).into(),
-                material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.99))),
-                // material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.1))),
-                ..default()
-            },
-            AliveCells,
-        ));
+    }
+}
+pub fn tick_life(
+    time: Res<Time>,
+    mut events: EventWriter<StepLifeEvent>,
+    mut step_timer: ResMut<StepTimer>,
+) {
+    if step_timer.0.tick(time.delta()).finished() {
+        events.send(StepLifeEvent)
     }
 }

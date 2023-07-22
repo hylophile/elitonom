@@ -4,7 +4,7 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
 use crate::{
     life::{
         noise::{AddNoiseEvent, RemoveNoiseEvent},
-        LifeConfig, StepTimer,
+        LifeConfig, StepTimer, step::StepLifeEvent,
     },
     tree::{hat::HatMetaTileType, TreeConfig},
 };
@@ -55,6 +55,7 @@ fn ui_system(
     mut tree_config: ResMut<TreeConfig>,
     mut evt1: EventWriter<AddNoiseEvent>,
     mut evt2: EventWriter<RemoveNoiseEvent>,
+    mut evt3: EventWriter<StepLifeEvent>,
     mut step_timer: ResMut<StepTimer>,
 ) {
     contexts.ctx_mut().set_visuals(egui::Visuals::light());
@@ -69,6 +70,11 @@ fn ui_system(
             if ui.button(running_label).clicked() {
                 life_config.running = !life_config.running;
             }
+
+            if ui.button("Step").clicked() {
+                evt3.send(StepLifeEvent);
+            }
+
             ui.horizontal(|ui| {
                 ui.label("Update interval:");
                 let response = ui.text_edit_singleline(&mut ui_state.update_interval);
