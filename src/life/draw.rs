@@ -51,7 +51,7 @@ pub fn draw(
                             &squared_euclidean,
                         )
                         .into_iter()
-                        .filter(|ne| ne.distance < life_config.stroke_width as f32)
+                        .filter(|ne| ne.distance < (10.0 * life_config.stroke_width as f32))
                         .map(|ne| {
                             life_state.new[ne.item as usize] = true;
                             ne.item as usize
