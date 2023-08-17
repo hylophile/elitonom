@@ -17,7 +17,6 @@ struct UIState {
     birth: String,
     survival: String,
     update_interval: String,
-    // levels: String,
     spectre: bool,
     meta_tile: HatMetaTileType,
     add_noise_percent: String,
@@ -31,7 +30,6 @@ impl Plugin for UIPlugin {
             birth: "3".to_string(),
             survival: "23".to_string(),
             update_interval: "0.01".to_string(),
-            // levels: "5".to_string(),
             add_noise_percent: "10".to_string(),
             spectre: true,
             remove_noise_percent: "10".to_string(),
@@ -44,7 +42,7 @@ impl Plugin for UIPlugin {
     }
 }
 fn configure_visuals_system(mut egui_settings: ResMut<EguiSettings>) {
-    egui_settings.scale_factor = 1.5;
+    egui_settings.scale_factor = 1.25;
 }
 
 fn ui_system(
@@ -60,7 +58,6 @@ fn ui_system(
     contexts.ctx_mut().set_visuals(egui::Visuals::light());
 
     egui::SidePanel::left("side_panel")
-        // .default_width(500.0)
         .exact_width(150.0)
         .show(contexts.ctx_mut(), |ui| {
             ui.heading("Settings");
