@@ -11,8 +11,8 @@ It's playable at https://hylo.ink/monotile.
 - Scroll to zoom
 - **Play/Pause** toggles running, **Step** advances by a single generation
 - **Update interval** changes how fast generations update
-- **Birth**: If a dead cell has $x ∈ \text{Birth}$ neighbors, it will be alive in the next generation. Multiple (or 0) values possible.
-- **Survival**: If an alive cell has $x ∈ \text{Survival}$ neighbors, it will be alive in the next generation. Multiple (or 0) values possible.
+- **Birth**: Iff a dead cell has $x ∈ \text{Birth}$ neighbors, it will be alive in the next generation. Multiple (or 0) values possible.
+- **Survival**: Iff an alive cell has $x ∈ \text{Survival}$ neighbors, it will be alive in the next generation. Multiple (or 0) values possible.
 - Standard *Game of Life* rules are set in the UI on startup (**Birth: 3 / Survival: 23**, or **B3/S23** for short)
 - **Add/Remove noise** sets some random cells alive/dead
 
