@@ -1,17 +1,20 @@
-This project implements [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) for the [Einstein hat](https://cs.uwaterloo.ca/~csk/hat/) (and soon, the [Spectre](https://cs.uwaterloo.ca/~csk/spectre/) as well).
+This project implements [Conway's Game of
+Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) for the [Einstein
+Hat](https://cs.uwaterloo.ca/~csk/hat/) and the
+[Spectre](https://cs.uwaterloo.ca/~csk/spectre/).
 
-It's hosted and playable at https://hylo.ink/monotile.
+It's playable at https://hylo.ink/monotile.
 
 # Instructions
-- **Play/Pause** toggles running
 - Left mouse button to draw (change stroke width for a wider stroke)
 - Right mouse button to move the camera
 - Scroll to zoom
-- **Add/Remove noise** sets some random cells alive/dead
+- **Play/Pause** toggles running, **Step** advances by a single generation
 - **Update interval** changes how fast generations update
 - **Birth**: If a dead cell has $x ∈ \text{Birth}$ neighbors, it will be alive in the next generation. Multiple (or 0) values possible.
 - **Survival**: If an alive cell has $x ∈ \text{Survival}$ neighbors, it will be alive in the next generation. Multiple (or 0) values possible.
 - Standard *Game of Life* rules are set in the UI on startup (**Birth: 3 / Survival: 23**, or **B3/S23** for short)
+- **Add/Remove noise** sets some random cells alive/dead
 
 
 # Fun rules to try
@@ -28,6 +31,9 @@ It's hosted and playable at https://hylo.ink/monotile.
 
 # Run
 Visit https://hylo.ink/monotile or
-```sh
-cargo run --release
-```
+
+1. [Install Rust](https://www.rust-lang.org/tools/install). Preferably the `nightly` toolchain.
+2.
+    ```sh
+    cargo run --release
+    ```
