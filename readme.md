@@ -22,7 +22,7 @@ It's playable at https://hylo.ink/monotile.
 - **B: 3 / S: 234** 
   - forms resilient hexagons; add 5 and/or 6 to Survival for more stability
 - **B: 356 / S: 0123456** and variations
-  - **Fill** all cells, set **Update interval** to 2.0s and press play. You'll see intricate patterns emerging, which change at every turn and slowly devolve into chaos. 
+  - **Fill** all cells, then **Step** through the generations (or set **Update interval** to 2.0s and press **Play**). You'll see intricate patterns emerging, which change at every turn and slowly devolve into chaos. 
 - B: 2 / S: 3
 - B: 2 / S: 34
 - B: 24 / S: 
