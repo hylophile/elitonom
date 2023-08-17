@@ -20,7 +20,7 @@ pub const CAP: usize = 200_000;
 pub const LEVELS: usize = 6;
 
 #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
-pub const LEVELS: usize = 4;
+pub const LEVELS: usize = 3;
 
 #[cfg(target_arch = "wasm32")]
 pub const LEVELS: usize = 5;

@@ -4,7 +4,8 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
 use crate::{
     life::{
         noise::{AddNoiseEvent, RemoveNoiseEvent},
-        LifeConfig, StepTimer, step::StepLifeEvent,
+        step::StepLifeEvent,
+        LifeConfig, StepTimer,
     },
     tree::{hat::HatMetaTileType, TreeConfig},
 };
@@ -39,8 +40,6 @@ impl Plugin for UIPlugin {
         })
         .add_plugin(EguiPlugin)
         .add_startup_system(configure_visuals_system)
-        // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
-        // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_system(ui_system);
     }
 }
@@ -93,7 +92,7 @@ fn ui_system(
 
             ui.separator();
 
-            ui.label("Shape");
+            ui.label("Shape:");
 
             ui.horizontal(|ui| {
                 if ui
@@ -113,13 +112,82 @@ fn ui_system(
                 };
             });
 
+            if !ui_state.spectre {
+                ui.horizontal(|ui| {
+                    if ui
+                        .radio_value(&mut ui_state.meta_tile, HatMetaTileType::H, "H")
+                        .clicked()
+                    {
+                        ui_state.meta_tile = HatMetaTileType::H;
+                        tree_config.meta_tile = HatMetaTileType::H;
+                    };
+                    if ui
+                        .radio_value(&mut ui_state.meta_tile, HatMetaTileType::T, "T")
+                        .clicked()
+                    {
+                        ui_state.meta_tile = HatMetaTileType::T;
+                        tree_config.meta_tile = HatMetaTileType::T;
+                    };
+
+                    if ui
+                        .radio_value(&mut ui_state.meta_tile, HatMetaTileType::P, "P")
+                        .clicked()
+                    {
+                        ui_state.meta_tile = HatMetaTileType::P;
+                        tree_config.meta_tile = HatMetaTileType::P;
+                    };
+                    if ui
+                        .radio_value(&mut ui_state.meta_tile, HatMetaTileType::F, "F")
+                        .clicked()
+                    {
+                        ui_state.meta_tile = HatMetaTileType::F;
+                        tree_config.meta_tile = HatMetaTileType::F;
+                    };
+                });
+            };
+
             ui.separator();
 
+            ui.label("Rules:");
+
             ui.horizontal(|ui| {
-                if ui.button("Fill").clicked() {
+                ui.label("Birth:");
+                let response = ui.text_edit_singleline(&mut ui_state.birth);
+                if response.changed() {
+                    let mut n = [false, false, false, false, false, false, false, false];
+                    ui_state
+                        .birth
+                        .chars()
+                        .filter_map(|c| c.to_digit(10))
+                        .filter(|x| x < &8)
+                        .for_each(|d| n[d as usize] = true);
+                    life_config.birth = n;
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label("Survival:");
+                let response = ui.text_edit_singleline(&mut ui_state.survival);
+                if response.changed() {
+                    let mut n = [false, false, false, false, false, false, false, false];
+                    ui_state
+                        .survival
+                        .chars()
+                        .filter_map(|c| c.to_digit(10))
+                        .filter(|x| x < &8)
+                        .for_each(|d| n[d as usize] = true);
+                    life_config.survival = n;
+                }
+            });
+
+            ui.separator();
+
+            ui.label("Cell manipulation:");
+
+            ui.horizontal(|ui| {
+                if ui.button("Fill all").clicked() {
                     evt1.send(AddNoiseEvent { fraction: 1.01 });
                 };
-                if ui.button("Clear").clicked() {
+                if ui.button("Clear all").clicked() {
                     evt2.send(RemoveNoiseEvent { fraction: 1.01 });
                 };
             });
@@ -158,7 +226,7 @@ fn ui_system(
                 ui.label("%");
             });
             ui.horizontal(|ui| {
-                ui.label("Stroke width:");
+                ui.label("Drawing stroke width:");
                 if ui
                     .text_edit_singleline(&mut ui_state.stroke_width)
                     .changed()
@@ -166,84 +234,5 @@ fn ui_system(
                     life_config.stroke_width = ui_state.stroke_width.parse::<usize>().unwrap_or(1)
                 }
             });
-
-            ui.separator();
-
-            ui.horizontal(|ui| {
-                ui.label("Birth:");
-                let response = ui.text_edit_singleline(&mut ui_state.birth);
-                if response.changed() {
-                    let mut n = [false, false, false, false, false, false, false, false];
-                    ui_state
-                        .birth
-                        .chars()
-                        .filter_map(|c| c.to_digit(10))
-                        .filter(|x| x < &8)
-                        .for_each(|d| n[d as usize] = true);
-                    life_config.birth = n;
-                }
-            });
-            ui.horizontal(|ui| {
-                ui.label("Survival:");
-                let response = ui.text_edit_singleline(&mut ui_state.survival);
-                if response.changed() {
-                    let mut n = [false, false, false, false, false, false, false, false];
-                    ui_state
-                        .survival
-                        .chars()
-                        .filter_map(|c| c.to_digit(10))
-                        .filter(|x| x < &8)
-                        .for_each(|d| n[d as usize] = true);
-                    life_config.survival = n;
-                    // life_config.survival = ui_state
-                    //     .survival
-                    //     .chars()
-                    //     .filter_map(|c| c.to_digit(10))
-                    //     .collect();
-                }
-            });
-
-            ui.separator();
-
-            ui.horizontal(|ui| {
-                if ui
-                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::H, "H")
-                    .clicked()
-                {
-                    ui_state.meta_tile = HatMetaTileType::H;
-                    tree_config.meta_tile = HatMetaTileType::H;
-                };
-                if ui
-                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::T, "T")
-                    .clicked()
-                {
-                    ui_state.meta_tile = HatMetaTileType::T;
-                    tree_config.meta_tile = HatMetaTileType::T;
-                };
-
-                if ui
-                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::P, "P")
-                    .clicked()
-                {
-                    ui_state.meta_tile = HatMetaTileType::P;
-                    tree_config.meta_tile = HatMetaTileType::P;
-                };
-                if ui
-                    .radio_value(&mut ui_state.meta_tile, HatMetaTileType::F, "F")
-                    .clicked()
-                {
-                    ui_state.meta_tile = HatMetaTileType::F;
-                    tree_config.meta_tile = HatMetaTileType::F;
-                };
-            })
-            // ui.add(egui::widgets::Image::new(
-            //     egui_texture_handle.id(),
-            //     egui_texture_handle.size_vec2(),
-            // ));
-
-            // ui.add(egui::Slider::new(&mut ui_state.value, 0.0..=10.0).text("value"));
         });
-    // egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
-    //     ui.label("world");
-    // });
 }
