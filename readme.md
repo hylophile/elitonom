@@ -3,7 +3,8 @@ Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) for the [Einstein
 Hat](https://cs.uwaterloo.ca/~csk/hat/) and the
 [Spectre](https://cs.uwaterloo.ca/~csk/spectre/).
 
-It's playable at https://hylo.ink/monotile.
+It's playable at https://hylo.ink/monotile/game.
+Project documentation at https://hylo.ink/monotile/docs.
 
 # Instructions
 - Left mouse button to draw (change stroke width for a wider stroke)
@@ -31,7 +32,7 @@ It's playable at https://hylo.ink/monotile.
 - B: 2 / S: 2345
 
 # Run
-Visit https://hylo.ink/monotile (wait a moment until it's loaded, it's a 26MB .wasm file) or
+Visit https://hylo.ink/monotile/game (wait a moment until it's loaded, it's a 26MB .wasm file) or
 
 1. [Install Rust](https://www.rust-lang.org/tools/install). Preferably the `nightly` toolchain.
 2.
