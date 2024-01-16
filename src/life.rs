@@ -5,12 +5,11 @@ pub mod step;
 
 use self::{
     draw::draw,
-    init::{gen_neighbors, init_life},
+    init::gen_neighbors,
     noise::{add_noise, remove_noise, AddNoiseEvent, RemoveNoiseEvent},
     step::{step_life, tick_life, StepLifeEvent},
 };
 
-use bevy::app::StartupSet::PostStartup;
 use bevy::prelude::*;
 
 #[derive(Resource, Debug)]
@@ -49,18 +48,11 @@ impl Plugin for LifePlugin {
             .add_event::<AddNoiseEvent>()
             .add_event::<RemoveNoiseEvent>()
             .add_event::<StepLifeEvent>()
-            .add_startup_system(init_life.in_base_set(PostStartup))
             .add_system(add_noise)
             .add_system(remove_noise)
             .add_system(step_life)
             .add_system(tick_life.run_if(life_running))
             .add_system(draw);
-        // .add_system(
-        //     step_life
-        //         .run_if(life_running)
-        //         .in_schedule(CoreSchedule::FixedUpdate),
-        // )
-        // .insert_resource(FixedTime::new_from_secs(FIXED_TIMESTEP));
     }
 }
 

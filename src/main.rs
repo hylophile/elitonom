@@ -13,12 +13,7 @@ use life::LifePlugin;
 use tree::TreePlugin;
 use ui::UIPlugin;
 
-fn setup(
-    mut commands: Commands,
-    // ass: Res<AssetServer>,
-    mut _meshes: ResMut<Assets<Mesh>>,
-    mut _materials: ResMut<Assets<ColorMaterial>>,
-) {
+fn setup(mut commands: Commands) {
     commands
         .spawn(Camera2dBundle {
             projection: OrthographicProjection {
@@ -35,9 +30,6 @@ fn setup(
 
 fn main() {
     App::new()
-        // .insert_resource(Msaa::Sample4)
-        // .insert_resource(ClearColor(Color::rgb(0.8,0.8,0.8)))
-        // .insert_resource(ClearColor(Color::rgb(0.8,0.8,0.8)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Aperiodic Game of Life".to_string(),
@@ -49,7 +41,6 @@ fn main() {
         }))
         .add_plugin(PanCamPlugin::default())
         .add_plugin(ShapePlugin)
-        // .add_plugin(WorldInspectorPlugin::new())
         .insert_resource(ClearColor(BG_COLOR))
         .add_system(bevy::window::close_on_esc)
         .add_startup_system(setup)

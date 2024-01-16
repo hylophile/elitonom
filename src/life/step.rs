@@ -2,7 +2,6 @@ use bevy::render::mesh::Indices;
 use bevy::render::render_resource::PrimitiveTopology;
 use bevy::sprite::MaterialMesh2dBundle;
 
-// use bevy::ecs::schedule::ShouldRun;
 use bevy::{math::Affine2, prelude::*};
 use bevy_prototype_lyon::prelude::*;
 
@@ -43,7 +42,7 @@ static SPECTRE_INDICES: [u32; 36] = [
 ];
 
 pub fn gen_mesh(idxs: &Vec<usize>, affines: &[Affine2], is_spectre: bool) -> Mesh {
-    let (outline, indices): (&[Vec2], &[u32]) = if is_spectre {
+    let (outline, shape_indices): (&[Vec2], &[u32]) = if is_spectre {
         (SPECTRE_OUTLINE, &SPECTRE_INDICES)
     } else {
         (HAT_OUTLINE, &HAT_INDICES)
@@ -57,13 +56,15 @@ pub fn gen_mesh(idxs: &Vec<usize>, affines: &[Affine2], is_spectre: bool) -> Mes
         })
     }));
 
-    let mut is: Vec<u32> = Vec::with_capacity(indices.len() * idxs.len());
-    is.extend(
-        (0..idxs.len() as u32)
-            .flat_map(|j| indices.iter().map(move |i| i + j * outline.len() as u32)),
-    );
-    let indices = Indices::U32(is);
-
+    let indices = {
+        let mut indices: Vec<u32> = Vec::with_capacity(shape_indices.len() * idxs.len());
+        indices.extend((0..idxs.len() as u32).flat_map(|j| {
+            shape_indices
+                .iter()
+                .map(move |i| i + j * outline.len() as u32)
+        }));
+        Indices::U32(indices)
+    };
     let positions: Vec<_> = vertices.clone();
     let normals: Vec<_> = vertices.iter().map(|_| [0.0, 0.0, 1.0]).collect();
     let uvs: Vec<_> = vertices.iter().map(|_| [1.0, 0.0]).collect();
@@ -152,7 +153,6 @@ pub fn step_life(
                 MaterialMesh2dBundle {
                     mesh: meshes.add(mesh).into(),
                     material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.99))),
-                    // material: materials.add(ColorMaterial::from(Color::rgba(0.0, 0.0, 0.0, 0.1))),
                     ..default()
                 },
                 AliveCells,

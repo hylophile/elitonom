@@ -11,7 +11,7 @@ use crate::{
 use bevy::math::{Affine2, Vec2};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{
-    prelude::{Fill, GeometryBuilder, ShapeBundle, Stroke},
+    prelude::{GeometryBuilder, ShapeBundle, Stroke},
     shapes,
 };
 
@@ -72,22 +72,14 @@ fn construct_patch(
     p: HatMetaTile,
     f: HatMetaTile,
 ) -> Vec<Arc<HatMetaTile>> {
-    // let mut root = MetaTile::new(MetaTile::new(
-    //     Affine2::IDENTITY,
-    //     TileType::Pseudo,
-    //     h.data().width,
-    //     vec![],
-    // ));
     let mut root = Vec::with_capacity(30);
     let shapes = [h, t, p, f];
 
     for rule in RULES {
-        // dbg!(rule);
         match rule {
             Rule::H => {
                 let mut h = shapes[0].clone();
                 h.transform = Affine2::IDENTITY;
-                // dbg!(h.data());
                 root.push(Arc::new(h));
             }
             Rule::Four(n_child, n_outline, shape, n_vertex) => {
@@ -103,29 +95,14 @@ fn construct_patch(
 
                 let p1 = new_shape_outline[*n_vertex];
                 let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
-                // let new_poly = h; //todo
                 let new_transform = match_two(p1, q1, p2, q2);
-
-                // *(new_shape).data_mut().transform = new_transform.into();
-                // let e = new_shape.data().width;
-                // let c = new_shape.abandon();
-                // let mut d = MetaTile::new(MetaTile {
-                //     transform: new_transform,
-                //     shape: *shape,
-                //     width: e,
-                //     outline: new_shape_outline,
-                // });
-                // d.append(c);
 
                 new_shape.transform = new_transform;
                 new_shape.outline = new_shape_outline;
 
-                // dbg!(d.data());
                 root.push(Arc::new(new_shape));
             }
             Rule::Six(n_child_p, n_outline_p, n_child_q, n_outline_q, shape, n_vertex) => {
-                // let child_p = root.iter().nth(*n_child_p).unwrap().data();
-                // let child_q = root.iter().nth(*n_child_q).unwrap().data();
                 let child_p = root[*n_child_p].clone();
                 let child_q = root[*n_child_q].clone();
 
@@ -141,22 +118,10 @@ fn construct_patch(
                 let p1 = new_shape_outline[*n_vertex];
                 let q1 = new_shape_outline[(*n_vertex + 1) % new_shape_outline.len()];
                 let new_transform = match_two(p1, q1, p2, q2);
-                // *(new_shape).data_mut().transform = new_transform.into();
-                // let e = new_shape.data().width;
-                // let c = new_shape.abandon();
-
-                // let mut d = MetaTile::new(MetaTile {
-                //     transform: new_transform,
-                //     shape: *shape,
-                //     width: e,
-                //     outline: new_shape_outline,
-                // });
-                // d.append(c);
 
                 new_shape.transform = new_transform;
                 new_shape.outline = new_shape_outline;
 
-                // dbg!(d.data());
                 root.push(Arc::new(new_shape));
             }
         }
@@ -190,9 +155,6 @@ fn construct_meta_tiles(patch: Vec<Arc<HatMetaTile>>) -> AllFour {
     let mut new_h_outline = vec![llc, bps1];
 
     let w = Affine2::from_angle(-PI / 3.0).transform_point2(w);
-
-    // dbg!(bps1);
-    // dbg!(llc);
 
     new_h_outline.push(new_h_outline[1] + w);
     new_h_outline.push(eval_meta_tile(&patch[14], 2));
@@ -314,12 +276,7 @@ pub fn hat_background_polygons(mut commands: Commands, tree_config: Res<TreeConf
         meta: vec![Vec::new(); tree_config.levels + 2],
     };
 
-    make_hat_polygons(
-        &mut polys,
-        // Affine2::from_scale(Vec2 { x: 5.0, y: 5.0 }),
-        Affine2::IDENTITY,
-        &mtt,
-    );
+    make_hat_polygons(&mut polys, Affine2::IDENTITY, &mtt);
 
     dbg!(polys.h.len());
     dbg!(polys.h1.len());
@@ -328,9 +285,7 @@ pub fn hat_background_polygons(mut commands: Commands, tree_config: Res<TreeConf
     dbg!(polys.f.len());
 
     commands.insert_resource(MetaTileTree(MetaTileNode::Hat(mtt)));
-    // std::process::exit(0);
-    // if false {
-    for (i, shape) in [
+    for (_i, shape) in [
         HatTileType::H1Hat,
         HatTileType::HHat,
         HatTileType::THat,
@@ -354,65 +309,43 @@ pub fn hat_background_polygons(mut commands: Commands, tree_config: Res<TreeConf
                 g = g.add(tile);
             }
 
-            // std::process::exit(0);
-
             commands.spawn((
                 ShapeBundle {
                     path: g.build(),
-                    // transform: Transform::from_xyz(0.0, 0.0, i as f32 * 0.01),
                     ..default()
                 },
-                // Fill::color(shape_to_fill_color(*shape)),
                 Stroke::new(STROKE_COLOR, STROKE_WIDTH),
                 DeadCells,
             ));
         }
     }
 
-    if false {
-        for (i, outlines) in polys.meta.iter().enumerate() {
-            let mut g = GeometryBuilder::new();
-            for outline in outlines {
-                g = g.add(outline);
-            }
+    // draws metatile shapes
+    // if false {
+    //     for (i, outlines) in polys.meta.iter().enumerate() {
+    //         let mut g = GeometryBuilder::new();
+    //         for outline in outlines {
+    //             g = g.add(outline);
+    //         }
 
-            // std::process::exit(0);
-
-            commands.spawn((
-                ShapeBundle {
-                    path: g.build(),
-                    transform: Transform::from_xyz(0.0, 0.0, 0.1),
-                    ..default()
-                },
-                Stroke::new(
-                    Color::rgba(0.0, 0.0, 0.0, 0.1),
-                    STROKE_WIDTH * 1.5_f32.powi(i as i32),
-                ),
-                DeadCells,
-            ));
-            // }
-        }
-    }
+    //         commands.spawn((
+    //             ShapeBundle {
+    //                 path: g.build(),
+    //                 transform: Transform::from_xyz(0.0, 0.0, 0.1),
+    //                 ..default()
+    //             },
+    //             Stroke::new(
+    //                 Color::rgba(0.0, 0.0, 0.0, 0.1),
+    //                 STROKE_WIDTH * 1.5_f32.powi(i as i32),
+    //             ),
+    //             DeadCells,
+    //         ));
+    //     }
+    // }
 }
 
-fn shape_to_fill_color(shape: HatTileType) -> Color {
-    let tr = 0.2;
-    match shape {
-        // TileType::H1Hat => crate::constants::H_MIRROR_COLOR,
-        // TileType::HHat => crate::constants::H_COLOR,
-        // TileType::THat => crate::constants::T_COLOR,
-        // TileType::PHat => crate::constants::P_COLOR,
-        // TileType::FHat => crate::constants::F_COLOR,
-        HatTileType::H1Hat => Color::rgba(0.0, 0.0, 1.0, tr),
-        HatTileType::HHat => Color::rgba(0.0, 1.0, 1.0, tr),
-        HatTileType::PHat => Color::rgba(1.0, 0.0, 1.0, tr),
-        HatTileType::FHat => Color::rgba(1.0, 1.0, 0.0, tr),
-        // TileType::Pseudo => _
-        _ => Color::rgba(1.0, 1.0, 1.0, 0.0),
-        // _ => Color::rgba(0.0, 0.0, 0.0, 0.0),
-    }
-}
 type HatPoints = Vec<shapes::Polygon>;
+
 struct HatPolys {
     h: HatPoints,
     h1: HatPoints,
@@ -421,17 +354,17 @@ struct HatPolys {
     p: HatPoints,
     meta: Vec<Vec<shapes::Polygon>>,
 }
-fn make_hat_polygons(polys: &mut HatPolys, t: Affine2, tree: &HatMetaTile) {
+
+fn make_hat_polygons(polys: &mut HatPolys, affine: Affine2, tree: &HatMetaTile) {
     for child in &tree.children {
-        make_hat_polygons(polys, t.mul(tree.transform), child);
+        make_hat_polygons(polys, affine.mul(tree.transform), child);
     }
 
-    let tt = t.mul(tree.transform);
+    let affine = affine.mul(tree.transform);
     let points = tree
         .outline
         .iter()
-        .map(|p| tt.transform_point2(*p))
-        // .map(|p| (Affine2::from_scale(Vec2::new(100.0, 100.0))).transform_point2(*p))
+        .map(|p| affine.transform_point2(*p))
         .collect();
     let poly = shapes::Polygon {
         points,

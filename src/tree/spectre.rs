@@ -7,7 +7,7 @@ use bevy::math::Affine2;
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{
-    prelude::{Fill, GeometryBuilder, ShapeBundle, Stroke},
+    prelude::{GeometryBuilder, ShapeBundle, Stroke},
     shapes,
 };
 use std::f32::consts::PI;
@@ -43,23 +43,6 @@ pub struct SpectreMetaTile {
 pub enum SpectreNode {
     Meta(SpectreMetaTile),
     Shape(SpectreShape),
-}
-
-impl SpectreMetaTile {
-    pub fn new() -> Self {
-        Self {
-            transform: Affine2::IDENTITY,
-            quad: *SPECTRE_KEYS,
-            children: Vec::new(),
-        }
-    }
-    pub fn transformed(transform: Affine2) -> Self {
-        Self {
-            transform,
-            quad: *SPECTRE_KEYS,
-            children: Vec::new(),
-        }
-    }
 }
 
 pub const SPECTRE_OUTLINE: &[Vec2] = &[
@@ -188,15 +171,6 @@ const T_RULES: &[&(f32, usize, usize); 7] = &[
 ];
 
 pub fn spectre_background_polygons(mut commands: Commands, levels: usize) {
-    //
-    //
-    // let smt = SpectreMetaTile {
-    //     transform: Affine2::IDENTITY,
-    //     quad: *SPECTRE_KEYS,
-    //     children: Vec::new(),
-    // };
-    // let sys = build_spectre_base();
-    // let smt = sys.gamma;
     let sys = build_spectre_tree(levels);
     let smt = sys.delta;
 
@@ -219,18 +193,18 @@ pub fn spectre_background_polygons(mut commands: Commands, levels: usize) {
     ));
 }
 
-fn make_spectre_polygons(polys: &mut Vec<shapes::Polygon>, t: Affine2, tree: &SpectreNode) {
+fn make_spectre_polygons(polys: &mut Vec<shapes::Polygon>, affine: Affine2, tree: &SpectreNode) {
     match tree {
         SpectreNode::Meta(tree) => {
             for child in &tree.children {
-                make_spectre_polygons(polys, t.mul(tree.transform), child);
+                make_spectre_polygons(polys, affine.mul(tree.transform), child);
             }
         }
-        SpectreNode::Shape(s) => {
-            let tt = t.mul(s.transform);
+        SpectreNode::Shape(shape) => {
+            let affine = affine.mul(shape.transform);
             let points = SPECTRE_OUTLINE
                 .iter()
-                .map(|p| tt.transform_point2(*p))
+                .map(|p| affine.transform_point2(*p))
                 .collect();
             let poly = shapes::Polygon {
                 points,
@@ -242,12 +216,13 @@ fn make_spectre_polygons(polys: &mut Vec<shapes::Polygon>, t: Affine2, tree: &Sp
 }
 
 fn build_spectre_tree(levels: usize) -> Sys {
-    let mut a = build_spectre_base();
+    let mut spectre_tree = build_spectre_base();
 
     for _ in 0..levels {
-        a = build_spectre_super_tiles(a);
+        spectre_tree = build_spectre_super_tiles(spectre_tree);
     }
-    a
+
+    spectre_tree
 }
 
 fn build_spectre_base() -> Sys {
@@ -320,8 +295,6 @@ fn build_spectre_super_tiles(sys: Sys) -> Sys {
     let mut ret = Sys::new();
 
     for (category, subs) in SUPER_RULES {
-        // let
-        // let children = subs.iter().enumerate(|i, sub| )
         let mut children = vec![];
         for i in 0..8 {
             if let Some(sub) = subs[i] {
@@ -341,6 +314,4 @@ fn build_spectre_super_tiles(sys: Sys) -> Sys {
     }
 
     ret
-
-    // ts.push(tquad);
 }
