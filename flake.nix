@@ -18,6 +18,20 @@
         rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile
           ./rust-toolchain.toml;
       in with pkgs; {
-        devShells.default = mkShell { buildInputs = [ rustToolchain ]; };
+        devShells.default = mkShell rec {
+          buildInputs = [
+            rustToolchain
+            wayland
+            alsa-lib
+            libxkbcommon
+            udev
+            alsa-lib
+            vulkan-loader
+            wasm-bindgen-cli
+            binaryen
+          ];
+          nativeBuildInputs = [ pkg-config ];
+          LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
+        };
       });
 }
