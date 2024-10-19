@@ -3,8 +3,8 @@ Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) for the [Einstein
 Hat](https://cs.uwaterloo.ca/~csk/hat/) and the
 [Spectre](https://cs.uwaterloo.ca/~csk/spectre/).
 
-It's playable at https://hylo.ink/monotile/game.
-Project documentation at https://hylo.ink/monotile/docs.
+It's playable [here](https://hylo.ink/dump/aperiodic-game-of-life-monotile/game/).
+Project documentation [here](https://hylo.ink/dump/aperiodic-game-of-life-monotile/docs/).
 
 # Instructions
 - Left mouse button to draw (change stroke width for a wider stroke)
